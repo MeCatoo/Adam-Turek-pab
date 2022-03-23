@@ -3,19 +3,26 @@ import express from 'express'
 import { Request, Response } from 'express'
 import { normalize } from 'path'
 import { Note } from './note'
+import { Tag } from './tag'
+import fs from 'fs';
 
 const app = express()
 
 const notes: Note[] = []
+const tags: Tag[]=[];
+const tag1 =  new Tag("tag test1")
+const tag2 =  new Tag("tag test3")
+const tag3 =  new Tag("tag test24")
 notes.push(
   new Note(
     {
       title: "test",
       content: "test",
       createDate: "test",
-      tags: ["test"],
+      tags: [tag1, tag2, tag3 ],
       id: 1
     }))
+    
 
 app.use(express.json())
 
@@ -24,8 +31,28 @@ app.get('/note/:id', function (req: Request, res: Response) {
   note ?? res.send(404)
   res.status(200).send(note)
 })
+app.get('/note', function (req: Request, res: Response) {
+  res.status(200).send(notes)
+})
+
+app.get('/tag/:id', function (req: Request, res: Response){
+  const tag = FindTagById(+req.params.id)
+  tag ?? res.send(404)
+  res.status(200).send(tag)
+})
+app.get('/tag', function (req: Request, res: Response) {
+  res.status(200).send(tags)
+})
 
 app.post('/note', function (req: Request, res: Response) {
+  
+  const tagsTmp: Tag[]=[];
+  req.body.tags.forEach((element: { name: string }) => {
+    IsTagExists(element.name)
+    const tmp = FindTagByName(element.name)
+    if(tmp)
+    {tagsTmp.push(tmp)}
+  })
   if (req.body.title && req.body.content) {
     const date = new Date()
     const note: Note = new Note(
@@ -97,6 +124,40 @@ function FindIndexById(id: number): number {
   })
   return noteIndex;
 }
-
+function FindTagByName(name: string) {
+  const tag = tags.find(function(tag: Tag){
+    if (tag.name === name || tag.name.toLocaleLowerCase()===name.toLocaleLowerCase()) {
+      return true
+    }
+    else {
+      return false
+    }
+  })
+  return tag;
+}
+function FindTagById(id: number){
+  const tag = tags.find(function(tag: Tag){
+    if (tag.id === id) {
+      return true
+    }
+    else {
+      return false
+    }
+  })
+  return tag;
+}
+function IsTagExists(name: string):void{
+  const tag=FindTagByName(name)
+  if(!tag){
+    tags.push(new Tag(name))
+  }
+}
+// private async function updateStorage(): Promise<void> {
+//   try {
+//       await fs.promises.writeFile(storeFile, dataToSave);
+//   } catch (err) {
+//       console.log(err)
+//   }
+// }
 app.listen(3000)
 

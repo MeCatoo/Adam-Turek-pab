@@ -1,8 +1,10 @@
+import {Tag} from './tag'
+
 export class Note{
     title:string 
     content:string
     createDate:string
-    tags:string[]
+    tags:Tag[]
     id:number
     constructor(note:Note){
         this.title=note.title
