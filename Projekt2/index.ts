@@ -8,7 +8,7 @@ import fs from 'fs';
 import { json } from 'stream/consumers'
 
 const app = express()
-const storeFile = "Storage.json"
+const storeFile = "Projekt2\node_modules\Storage.json"
 let notes: Note[] = []
 let tags: Tag[] = [];
 readStorage();
@@ -71,6 +71,17 @@ app.post('/note', function (req: Request, res: Response) {
   }
 })
 
+app.post('/tag',
+  function (req: Request, res: Response) {
+    if (req.body.name) {
+      const tag = CreateTag(req.body.name)
+      updateStorage()
+      res.status(200).send(tag)
+    }
+    else
+      res.status(400).send("Tag musi mieć nazwę")
+  })
+
 app.put('/note/:id',
   function (req: Request, res: Response) {
     const note = FindById(+req.params.id)
@@ -83,11 +94,25 @@ app.put('/note/:id',
         id: note.id
       })
       notes.splice(FindIndexById(+req.params.id), 1, editedNote)
+      updateStorage();
       res.status(200).send("OK")
     }
     else
       res.status(404).send("Nie znaleziono")
   })
+
+app.put('/tag/:id',
+  function (req: Request, res: Response) {
+    const tag = FindTagById(+req.params.id)
+    if (tag) {
+      tag.name = req.body.name
+      tags.splice(FindTagIndexById(+req.params.id), 1, tag)
+      res.status(200).send(tag)
+    }
+    else
+      res.status(400).send("Nie znaleziono")
+  })
+
 app.delete('/note/:id',
   function (req: Request, res: Response) {
     if (FindById(+req.params.id)) {
@@ -99,7 +124,15 @@ app.delete('/note/:id',
   }
 )
 
-
+app.delete('/tag/:id',
+  function (req: Request, res: Response) {
+    if (FindTagById(+req.params.id)) {
+      tags.splice(FindTagIndexById(+req.params.id), 1)
+      res.status(200).send("Usunięto")
+    }
+    else
+      res.status(400).send("Nie znaleziono")
+  })
 
 
 function FindById(id: number) {
@@ -150,6 +183,17 @@ function FindTagById(id: number) {
   })
   return tag;
 }
+function FindTagIndexById(id: number): number {
+  const tagIndex = tags.findIndex(function (tag: Tag) {
+    if (tag.id === id) {
+      return true
+    }
+    else {
+      return false
+    }
+  })
+  return tagIndex;
+}
 // function IsTagExists(name: string): void {
 //   const tag = FindTagByName(name)
 //   if (!tag) {
@@ -162,21 +206,20 @@ function CreateTag(name: string): Tag {
   return tag;
 }
 async function updateStorage(): Promise<void> {
-  const tmp = {notes, tags}
-  const dataToSave = JSON.stringify(tmp);
+  const tmp = { notes, tags }
   try {
-      await fs.promises.writeFile(storeFile, dataToSave);
+    await fs.promises.writeFile(storeFile, JSON.stringify(tmp));
   } catch (err) {
-      console.log(err)
+    console.log(err)
   }
 }
- async function readStorage(): Promise<void> {
+async function readStorage(): Promise<void> {
   try {
-      const data = await fs.promises.readFile(storeFile, 'utf-8');
-      notes = JSON.parse(data).notes
-      tags = JSON.parse(data).tags
+    const data = await fs.promises.readFile(storeFile, 'utf-8');
+    notes = JSON.parse(data).notes
+    tags = JSON.parse(data).tags
   } catch (err) {
-      console.log(err)
+    console.log(err)
   }
 }
 app.listen(3000)
