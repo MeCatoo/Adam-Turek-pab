@@ -5,25 +5,26 @@ import { normalize } from 'path'
 import { Note } from './note'
 import { Tag } from './tag'
 import fs from 'fs';
+import { json } from 'stream/consumers'
 
 const app = express()
-
-const notes: Note[] = []
-const tags: Tag[]=[];
-const tag1 =  new Tag("tag test1")
-const tag2 =  new Tag("tag test3")
-const tag3 =  new Tag("tag test24")
-notes.push(
-  new Note(
-    {
-      title: "test",
-      content: "test",
-      createDate: "test",
-      tags: [tag1, tag2, tag3 ],
-      id: 1
-    }))
-    
-
+const storeFile = "Storage.json"
+let notes: Note[] = []
+let tags: Tag[] = [];
+readStorage();
+// const tag1 = new Tag("tag test1")
+// const tag2 = new Tag("tag test3")
+// const tag3 = new Tag("tag test24")
+// tags.push(tag1, tag2, tag3)
+// notes.push(
+//   new Note(
+//     {
+//       title: "test",
+//       content: "test",
+//       createDate: "test",
+//       tags: [tag1, tag2, tag3],
+//       id: 1
+//     }))
 app.use(express.json())
 
 app.get('/note/:id', function (req: Request, res: Response) {
@@ -35,7 +36,7 @@ app.get('/note', function (req: Request, res: Response) {
   res.status(200).send(notes)
 })
 
-app.get('/tag/:id', function (req: Request, res: Response){
+app.get('/tag/:id', function (req: Request, res: Response) {
   const tag = FindTagById(+req.params.id)
   tag ?? res.send(404)
   res.status(200).send(tag)
@@ -45,13 +46,11 @@ app.get('/tag', function (req: Request, res: Response) {
 })
 
 app.post('/note', function (req: Request, res: Response) {
-  
-  const tagsTmp: Tag[]=[];
-  req.body.tags.forEach((element: { name: string }) => {
-    IsTagExists(element.name)
-    const tmp = FindTagByName(element.name)
-    if(tmp)
-    {tagsTmp.push(tmp)}
+
+  const tagsTmp: Tag[] = [];
+  req.body.tags.forEach((element: Tag) => {
+    tagsTmp.push(FindTagByName(element.name))
+
   })
   if (req.body.title && req.body.content) {
     const date = new Date()
@@ -60,10 +59,11 @@ app.post('/note', function (req: Request, res: Response) {
         title: req.body.title,
         content: req.body.title,
         createDate: date.toISOString(),
-        tags: req.body.tags,
+        tags: tagsTmp,
         id: Date.now()
       })
     notes.push(note)
+    updateStorage();
     res.status(200).send(note)
   }
   else {
@@ -124,19 +124,23 @@ function FindIndexById(id: number): number {
   })
   return noteIndex;
 }
-function FindTagByName(name: string) {
-  const tag = tags.find(function(tag: Tag){
-    if (tag.name === name || tag.name.toLocaleLowerCase()===name.toLocaleLowerCase()) {
+function FindTagByName(name: string): Tag {
+  const tag = tags.find(function (tag: Tag) {
+    if (tag.name.toLocaleLowerCase() === name.toLocaleLowerCase()) {
       return true
     }
     else {
       return false
     }
   })
-  return tag;
+  if (tag)
+    return tag;
+  else {
+    return CreateTag(name)
+  }
 }
-function FindTagById(id: number){
-  const tag = tags.find(function(tag: Tag){
+function FindTagById(id: number) {
+  const tag = tags.find(function (tag: Tag) {
     if (tag.id === id) {
       return true
     }
@@ -146,18 +150,34 @@ function FindTagById(id: number){
   })
   return tag;
 }
-function IsTagExists(name: string):void{
-  const tag=FindTagByName(name)
-  if(!tag){
-    tags.push(new Tag(name))
-  }
-}
-// private async function updateStorage(): Promise<void> {
-//   try {
-//       await fs.promises.writeFile(storeFile, dataToSave);
-//   } catch (err) {
-//       console.log(err)
+// function IsTagExists(name: string): void {
+//   const tag = FindTagByName(name)
+//   if (!tag) {
+//     tags.push(new Tag(name))
 //   }
 // }
+function CreateTag(name: string): Tag {
+  const tag = new Tag(name)
+  tags.push(tag)
+  return tag;
+}
+async function updateStorage(): Promise<void> {
+  const tmp = {notes, tags}
+  const dataToSave = JSON.stringify(tmp);
+  try {
+      await fs.promises.writeFile(storeFile, dataToSave);
+  } catch (err) {
+      console.log(err)
+  }
+}
+ async function readStorage(): Promise<void> {
+  try {
+      const data = await fs.promises.readFile(storeFile, 'utf-8');
+      notes = JSON.parse(data).notes
+      tags = JSON.parse(data).tags
+  } catch (err) {
+      console.log(err)
+  }
+}
 app.listen(3000)
 
