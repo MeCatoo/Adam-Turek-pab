@@ -1,19 +1,19 @@
-import {Tag} from './tag'
+import { Tag } from './tag'
 import { User } from './user'
-
-export class Note{
-    title:string 
-    content:string
-    createDate:string
-    tags:Tag[]
-    id:number
+const date = new Date()
+export class Note {
+    title: string
+    content: string
+    createDate: string
+    tags: Tag[]
+    id: number
     user: User
-    constructor(note:Note){
-        this.title=note.title
-        this.content=note.content
-        this.createDate=note.createDate
-        this.tags=note.tags
-        this.id=note.id
-        this.user=note.user
+    constructor(title: string, content: string, tags: Tag[], user: User) {
+        this.title = title
+        this.content = content
+        this.createDate = date.toISOString()
+        this.tags = tags
+        this.id = Date.now()
+        this.user = user
     }
 }
