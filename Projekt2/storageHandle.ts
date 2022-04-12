@@ -1,5 +1,7 @@
 import { Console } from 'console';
+import e from 'express';
 import fs from 'fs';
+import { resolve } from 'path';
 import { Note } from './note'
 import { Tag } from './tag'
 import { User } from './user'
@@ -10,9 +12,10 @@ export class StorageHandle {
     private _tags: Tag[] = [];
     private _users: User[] = [];
     private storeFile = "Storage.json"
+    private user123 = new User("123", "123")
 
     constructor() {
-        //this.readStorage()
+        this.readStorage()
     }
     get notes(): Note[] {
         return this._notes;
@@ -35,6 +38,9 @@ export class StorageHandle {
                 this.updateStorage();
                 break;
             case "Note":
+                let tmpTags:Tag[] = []
+                stored.tags.forEach((tag: Tag) => tmpTags.push(this.FindTag(String(tag.name))))
+                stored.tags = tmpTags
                 this._notes.push(stored)
                 this.updateStorage();
                 break;
@@ -59,7 +65,7 @@ export class StorageHandle {
     }
     FindTag(searchParameter: any): Tag {
         let tag;
-        if (searchParameter.constructor.name === "number") {
+        if (searchParameter.constructor.name === "Number") {
             tag = this._tags.find(function (tag: Tag): boolean {
                 if (tag.id === searchParameter) {
                     return true
@@ -69,7 +75,7 @@ export class StorageHandle {
                 }
             })
         }
-        else if (searchParameter.constructor.name === "string") {
+        else if (searchParameter.constructor.name === "String") {
             tag = this._tags.find(function (tag: Tag): boolean {
                 if (tag.name.toLowerCase() === searchParameter.toLowerCase()) {
                     return true
@@ -79,20 +85,22 @@ export class StorageHandle {
                 }
             })
             if (!tag) {
-                tag = this.Store(new Tag(searchParameter))
+                tag = new Tag(searchParameter)
+                this.Store(tag)
             }
         }
         else
             throw new Error("Błędny parametr")
-        if (tag)
+        if (tag) {
             return tag
+        }
         else
             throw new Error("Nie odnaleziono tagu")
     }
     FindUser(id: any): User {
         let user
-        switch (id) {
-            case id.constructor.name === "number":
+        switch (id.constructor.name) {
+            case "number":
                 user = this._users.find(function (user: User): boolean {
                     if (user.id === id) {
                         return true
@@ -102,7 +110,7 @@ export class StorageHandle {
                     }
                 })
                 break;
-            case id.constructor.name === "string":
+            case "String":
                 user = this._users.find(function (user: User): boolean {
                     if (user.token === id) {
                         return true
@@ -212,7 +220,7 @@ export class StorageHandle {
         else
             return false
     }
-    VerifyToken(token:string): boolean{
+    VerifyToken(token: string): boolean {
         try {
             this.FindUser(token)
         } catch (error) {
@@ -223,6 +231,8 @@ export class StorageHandle {
 
     private async updateStorage(): Promise<void> {
         const tmp = [this._notes, this._tags, this._users]
+
+        console.log(JSON.stringify(tmp))
         try {
             await fs.promises.writeFile(this.storeFile, JSON.stringify(tmp));
         } catch (err) {
@@ -232,12 +242,17 @@ export class StorageHandle {
     private async readStorage(): Promise<void> {
         try {
             const data = await fs.promises.readFile(this.storeFile, 'utf-8');
-            this._notes = JSON.parse(data).notes
-            this._tags = JSON.parse(data).tags
-            this._users = JSON.parse(data).users
+            this._notes = this.Decode(JSON.parse(data)[0])
+            this._tags = this.Decode(JSON.parse(data)[1])
+            this._users = this.Decode(JSON.parse(data)[2])
             return
         } catch (err) {
             console.log(err)
         }
+    }
+    private Decode<Type>(arg: Type[]): Type[] {
+        let tmp: Type[] = [];
+        arg.forEach(element => tmp.push(element))
+        return tmp;
     }
 }

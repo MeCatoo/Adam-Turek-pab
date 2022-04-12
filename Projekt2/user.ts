@@ -10,7 +10,7 @@ export class User {
     }
     static DecodeHeader(header: string): string {
         const tmp = header.split(" ", 2)
-        if (!(tmp[0] === "bearer"))
+        if (!(tmp[0] === "Bearer"))
             throw new Error("Błędna autoryzacja")
         return tmp[1]
     }
