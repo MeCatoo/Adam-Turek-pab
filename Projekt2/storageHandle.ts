@@ -12,7 +12,6 @@ export class StorageHandle {
     private _tags: Tag[] = [];
     private _users: User[] = [];
     private storeFile = "Storage.json"
-    private user123 = new User("123", "123")
 
     constructor() {
         this.readStorage()
@@ -125,7 +124,7 @@ export class StorageHandle {
         else
             throw new Error("Nie znalezniono użytkownika")
     }
-    FinddNotesIndex(id: number): number {
+    private FinddNotesIndex(id: number): number {
         const note = this._notes.findIndex(function (note: Note): boolean {
             if (note.id === id) {
                 return true
@@ -139,7 +138,7 @@ export class StorageHandle {
         else
             throw new Error()
     }
-    FindTagsIndex(id: number): number {
+    private FindTagsIndex(id: number): number {
         const tag = this._tags.findIndex(function (tag: Tag): boolean {
             if (tag.id === id) {
                 return true
@@ -153,7 +152,7 @@ export class StorageHandle {
         else
             throw new Error()
     }
-    FindUsersIndex(id: number): number {
+    private FindUsersIndex(id: number): number {
         const user = this._users.findIndex(function (user: User): boolean {
             if (user.id === id) {
                 return true
@@ -173,11 +172,11 @@ export class StorageHandle {
         this.updateStorage()
     }
     DeleteNote(id: number) {
-        this._notes.splice(this.FindUsersIndex(id), 1)
+        this._notes.splice(this.FinddNotesIndex(id), 1)
         this.updateStorage()
     }
     DeleteTag(id: number) {
-        this._notes.splice(this.FindUsersIndex(id), 1)
+        this._tags.splice(this.FindTagsIndex(id), 1)
         this.updateStorage()
     }
 
