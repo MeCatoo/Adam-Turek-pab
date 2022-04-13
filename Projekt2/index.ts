@@ -21,7 +21,7 @@ app.get('/note/:id', function (req: Request, res: Response) {
         if (!storageHandle.VerifyToken(User.DecodeHeader(req.headers.authorization ?? "123")))
             return res.status(401).send("wymagane logowanie")
         let note = storageHandle.FindNote(+req.params.id)
-        if (!(note.user.token == req.headers.authorization ?? "123"))
+        if (!(note.user.token == req.headers.authorization ?? "123") || (note.isPublic == false))
             return res.status(401).send("wymagane logowanie")
         res.status(200).send(note)
     }
@@ -33,7 +33,7 @@ app.get('/note', function (req: Request, res: Response) {
     if (!storageHandle.VerifyToken(User.DecodeHeader(req.headers.authorization)))
         return res.status(401).send("wymagane logowanie")
     let filteredNotes = storageHandle.notes.filter(function (note: Note) {
-        if ((note.user.token === req.headers.authorization))
+        if ((note.user.token === User.DecodeHeader(req.headers.authorization ?? "123")) || (note.isPublic == true))
             return true
         else
             return false
@@ -81,7 +81,7 @@ app.post('/note', function (req: Request, res: Response) {
     if (req.body.tags.constructor.name !== "Array")
         return res.status(400).send("Podaj tagi jako tabelę")
     let note
-    try { note = new Note(req.body.title, req.body.content, req.body.tags, storageHandle.FindUser(User.DecodeHeader(req.headers.authorization))) }
+    try { note = new Note(req.body.title, req.body.content, req.body.tags, storageHandle.FindUser(User.DecodeHeader(req.headers.authorization)), req.body.isPublic) }
     catch (error) {
         return res.status(401).send(error)
     }
