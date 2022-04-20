@@ -1,7 +1,5 @@
 import { Console } from 'console';
-import e from 'express';
 import fs from 'fs';
-import { resolve } from 'path';
 import { Note } from './note'
 import { Tag } from './tag'
 import { User } from './user'
