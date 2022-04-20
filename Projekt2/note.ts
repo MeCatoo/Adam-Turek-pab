@@ -9,7 +9,8 @@ export class Note {
     id: number
     isPublic: boolean
     user: User
-    constructor(title: string, content: string, tags: Tag[], user: User, isPublic?:boolean) {
+    sharedFor: string[]
+    constructor(title: string, content: string, tags: Tag[], user: User, isPublic?:boolean, sharedFor?:string[]) {
         this.title = title
         this.content = content
         this.createDate = date.toISOString()
@@ -17,5 +18,6 @@ export class Note {
         this.id = Date.now()
         this.isPublic = isPublic ?? false
         this.user = user
+        this.sharedFor=sharedFor ?? [];
     }
 }

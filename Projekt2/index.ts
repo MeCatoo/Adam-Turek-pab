@@ -21,7 +21,8 @@ app.get('/note/:id', function (req: Request, res: Response) {
         if (!storageHandle.VerifyToken(User.DecodeHeader(req.headers.authorization ?? "123")))
             return res.status(401).send("wymagane logowanie")
         let note = storageHandle.FindNote(+req.params.id)
-        if (!(note.user.token == req.headers.authorization ?? "123") || (note.isPublic == false))
+        if (!(note.user.token == req.headers.authorization ?? "123") || (note.isPublic == false)
+            || (!note.sharedFor.includes(storageHandle.FindUser(User.DecodeHeader(req.headers.authorization)).login)))
             return res.status(401).send("wymagane logowanie")
         res.status(200).send(note)
     }
@@ -33,7 +34,8 @@ app.get('/note', function (req: Request, res: Response) {
     if (!storageHandle.VerifyToken(User.DecodeHeader(req.headers.authorization)))
         return res.status(401).send("wymagane logowanie")
     let filteredNotes = storageHandle.notes.filter(function (note: Note) {
-        if ((note.user.token === User.DecodeHeader(req.headers.authorization ?? "123")) || (note.isPublic == true))
+        if ((note.user.token === User.DecodeHeader(req.headers.authorization ?? "123")) || (note.isPublic == true)
+            || (note.sharedFor.includes(storageHandle.FindUser(User.DecodeHeader(req.headers.authorization)).login)))
             return true
         else
             return false
@@ -57,7 +59,7 @@ app.get('/tag', function (req: Request, res: Response) {
 app.post('/login', function (req: Request, res: Response) {
     if (!(req.body.login && req.body.password))
         res.status(401).send("podaj login i hasło")
-    const tmp = new User(req.body.login, req.body.password)
+    const tmp = new User(req.body.login, req.body.password, req.body.secertPass)
     let user
     try {
         user = storageHandle.FindUser(tmp.token)
@@ -81,7 +83,10 @@ app.post('/note', function (req: Request, res: Response) {
     if (req.body.tags.constructor.name !== "Array")
         return res.status(400).send("Podaj tagi jako tabelę")
     let note
-    try { note = new Note(req.body.title, req.body.content, req.body.tags, storageHandle.FindUser(User.DecodeHeader(req.headers.authorization)), req.body.isPublic) }
+    try {
+        note = new Note(req.body.title, req.body.content, req.body.tags,
+            storageHandle.FindUser(User.DecodeHeader(req.headers.authorization)), req.body.isPublic)
+    }
     catch (error) {
         return res.status(401).send(error)
     }
@@ -113,13 +118,15 @@ app.put('/note/:id',
         let editedNote
         try {
             note = storageHandle.FindNote(+req.params.id)
-            editedNote = new Note(req.body.title ?? note.title, req.body.content ?? note.content, req.body.tags ?? note.tags, storageHandle.FindUser(req.headers.authorization))
+            editedNote = new Note(req.body.title ?? note.title, req.body.content ?? note.content,
+                req.body.tags ?? note.tags, storageHandle.FindUser(req.headers.authorization), req.body.isPublic, req.body.sharedFor)
         } catch (error) {
             res.status(401).send(error)
         }
         if (!note)
             return res.status(400).send("Katastrofalny błąd")
-        if (!(note.user.token === req.headers.authorization))
+        if (!(note.user.token === User.DecodeHeader(req.headers.authorization))
+            || storageHandle.FindUser(User.DecodeHeader(req.headers.authorization)).admin === false)
             return res.status(401).send("wymagane logowanie")
         storageHandle.Update(editedNote, +req.params.id)
         res.status(200).send(storageHandle.FindNote(+req.params.id))
@@ -166,6 +173,17 @@ app.delete('/tag/:id',
         }
         res.status(200).send("Usunięto")
     })
-
+app.delete('/user', function (req: Request, res: Response) {
+    if (!req.headers.authorization)
+        return res.status(401).send("wymagane logowanie")
+    const user = storageHandle.FindUser(User.DecodeHeader(req.headers.authorization))
+    if (!storageHandle.VerifyToken(user.token)
+        || user.admin === false)
+        return res.status(401).send("wymagane logowanie")
+    let notes = storageHandle.notes.filter(note => note.user.token ===user.token)
+    notes.forEach(note => storageHandle.DeleteNote(note.id))
+    storageHandle.DeleteUser(user.id)
+    res.status(200).send("Użytkownik usunięty")
+})
 app.listen(3000)
 
