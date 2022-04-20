@@ -35,7 +35,7 @@ app.get('/note', function (req: Request, res: Response) {
         return res.status(401).send("wymagane logowanie")
     let filteredNotes = storageHandle.notes.filter(function (note: Note) {
         if ((note.user.token === User.DecodeHeader(req.headers.authorization ?? "123")) || (note.isPublic == true)
-            || (note.sharedFor.includes(storageHandle.FindUser(User.DecodeHeader(req.headers.authorization)).login)))
+            || (note.sharedFor.includes(storageHandle.FindUser(User.DecodeHeader(req.headers.authorization ?? "123")).login)))
             return true
         else
             return false
