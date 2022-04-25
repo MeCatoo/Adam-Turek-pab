@@ -25,8 +25,11 @@ class User implements IUser {
         this.tasks.AddTask(task);
         console.log(`Dodano nowe zadanie dla ${this.login}`)
     }
-    GetCurrentTask(): Task {
-        return this.tasks.GetCurrntTask()
+    GetCurrentTask(): string {
+        return "Obecne zadanie to: " + this.tasks.GetCurrentTask().ToString()
+    }
+    RemoveTask(date: Date){
+        this.tasks.RemoveTask(date)
     }
 }
 class Admin implements IUser {
