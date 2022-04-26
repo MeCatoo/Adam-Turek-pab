@@ -181,8 +181,8 @@ export class StorageHandle {
     Update(edited: any, id: number) {
         if (!edited)
             throw new Error()
-        switch (edited) {
-            case edited.constructor.name === "Note":
+        switch (edited.constructor.name) {
+            case "Note":
                 if (!this.FindNote(id))
                     throw new Error()
                 const tmpNote = this.FindNote(id)
@@ -192,7 +192,7 @@ export class StorageHandle {
                     tmpNote.tags = edited.tags ?? tmpNote.tags,
                     this._notes.splice(this.FinddNotesIndex(tmpNote.id), 1, tmpNote)
                 break;
-            case edited.constructor.name === "Tag":
+            case "Tag":
                 if (!this.FindTag(id))
                     throw new Error()
                 const tmpTag = this.FindTag(id)
