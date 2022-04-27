@@ -15,3 +15,9 @@ console.log( user.GetCurrentTask())
 console.log(user.GetUpcomingTask())
 const app = express()
 app.use(express.json())
+app.get('/tasks', function(req: Request, res: Response){
+    let tmp:string[] = []
+    user.tasks.tasks.forEach(task=>tmp.push(task.ToString() + "\n"))
+    res.status(200).send(tmp)
+})
+app.listen(3000)
