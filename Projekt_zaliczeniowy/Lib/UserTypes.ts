@@ -28,7 +28,10 @@ class User implements IUser {
     GetCurrentTask(): string {
         return "Obecne zadanie to: " + this.tasks.GetCurrentTask().ToString()
     }
-    RemoveTask(date: Date){
+    GetUpcomingTask(): string {
+        return "Kolejne zadanie to: " + this.tasks.GetUpcomingTask().ToString()
+    }
+    RemoveTask(date: Date) {
         this.tasks.RemoveTask(date)
     }
 }
@@ -62,4 +65,10 @@ class Instytucja {
             throw new Error("Ten pracownik jest już dodadny");
         this.employees.push(employee)
     }
+    GetEmployeesTasks(): string[] {
+        let tasks: string[] = []
+        this.employees.forEach(employee => tasks.push(employee.GetCurrentTask()))
+        return tasks
+    }
+
 }

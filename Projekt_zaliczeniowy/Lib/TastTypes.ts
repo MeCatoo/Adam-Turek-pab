@@ -12,14 +12,14 @@ enum Priority {
     High = "High",
     Medium = "Medium",
     Low = "Low",
-    Canceled = "Canceled",
     TBA = "TBA",
     Completed = "Completed"
 }
 
 class Task {
     id: number
-    name: String
+    name: string
+    description: string = ""
     createDate: Date
     startDate: Date
     hours: number
@@ -38,8 +38,14 @@ class Task {
         this.endDate = tmp
         this.priority = priority
     }
-    ToString() :string{
+    ToString(): string {
         return `${this.name} zaplanowane od ${this.startDate} do ${this.endDate} z priorytetem ${this.priority}`
+    }
+    AddDescription(description: string): void {
+        if (description.length > 300)
+            throw new Error("Opis jest za długi")
+        this.description = description
+        return
     }
 }
 class TaskList {
@@ -73,7 +79,6 @@ class TaskList {
                 for (let i = this.tasks.length - 1; i > 0; i--) {
                     const after = this.tasks[i]
                     const before = this.tasks[i - 1]
-                    console.log(i)
                     if (before.endDate < task.startDate && after.startDate > task.endDate) {
                         this.tasks.push(task)
                         break;
@@ -92,6 +97,21 @@ class TaskList {
                 return 0
         })
     }
+    // AddTaskWithoutDate(task: Task, priority: Priority){
+    //     if(task.priority !== Priority.TBA)
+    //     throw new Error("W ten sposób można przypisać tylko zadania z priorytetem TBA")
+    //     this.tasks.push(task)
+    //     this.tasks.sort(function(a:Task,b:Task):number{
+    //         const aIndex = Object.keys(Priority).indexOf(a.priority)
+    //         const bIndex = Object.keys(Priority).indexOf(b.priority)
+    //         if(aIndex>bIndex)
+    //         return -1
+    //         else if(aIndex<bIndex)
+    //         return 1
+    //         else 
+    //         return 0
+    //     })
+    // }
     RemoveTask(date: Date) {
         const tmp = this.tasks.findIndex(element => element.startDate <= date && element.endDate >= date)
         if (!tmp)
@@ -104,5 +124,11 @@ class TaskList {
         if (tmp)
             return tmp
         throw new Error("Brak obecnie zadań")
+    }
+    GetUpcomingTask(): Task {
+        const index = this.tasks.indexOf(this.GetCurrentTask())
+        if (index >= this.tasks.length - 1)
+            throw new Error("Nie ma zaplanowanych kolejnych zadań")
+        return this.tasks[index + 1]
     }
 }
