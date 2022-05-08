@@ -14,10 +14,10 @@ export class Stolik{
             throw new Error("Błędna nazwa")
     }
     set IloscOsob(name: number) {
-        if (name < 10)
+        if (name < 100)
             this._iloscOsob = name
         else
-            throw new Error("Błędna nazwa")
+            throw new Error("Błędna ilosc")
     }
     set Status(name: Status) {
             this._status = name
