@@ -42,5 +42,6 @@ export enum Pozycja {
     kierownik = "kierownik",
     kucharz = "kucharz",
     kelner = "kelner",
-    brak = "brak"
+    brak = "brak",
+    zwolniony = "zwolniony"
 }
