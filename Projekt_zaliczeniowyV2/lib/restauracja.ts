@@ -94,6 +94,7 @@ export class Restauracja {
             return true
         }
     }
+
     Zwolnij(pracownik: Pracownik): boolean {
         let tmp = this._zatrudnieni.find(element => element.Imie == pracownik.Imie && element.Nazwisko == pracownik.Nazwisko && element.Pozycja == pracownik.Pozycja)
         if (tmp) {
@@ -114,6 +115,7 @@ export class Restauracja {
             return true
         }
     }
+    
     ZmienStatusStolika(stolik: Stolik, status: StolikStatus): boolean {
         let tmp = this._stoliki.find(element => element.Nazwa == stolik.Nazwa)
         if (tmp && tmp.Status != status) {
@@ -126,8 +128,8 @@ export class Restauracja {
         }
     }
     UsunStolik(stolik: Stolik): boolean {
-        if (this._menu.find(element => element.Nazwa == stolik.Nazwa)) {
-            this._menu = this._menu.splice(this._menu.findIndex(element => element.Nazwa == stolik.Nazwa, 1))
+        if (this._stoliki.find(element => element.Nazwa == stolik.Nazwa)) {
+            this._stoliki = this._stoliki.splice(this._stoliki.findIndex(element => element.Nazwa == stolik.Nazwa, 1))
             return true
         }
         else {
