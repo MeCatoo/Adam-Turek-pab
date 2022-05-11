@@ -1,7 +1,7 @@
-import { Status, Stolik } from "./Stolik";
+import { Status, Stolik } from "./stolik";
 
 export class Rezerwacja {
-    private _stolik: Stolik = new Stolik("test",1, )
+    private _stolik: Stolik = new Stolik("test", 1,)
     private _start: Date = new Date()
     private _koniec: Date = new Date()
     private _imie: string = ""
@@ -44,7 +44,9 @@ export class Rezerwacja {
             throw new Error("Błędna nazwa")
     }
 
-    constructor(stolik: Stolik) {
+    constructor(start: Date, end: Date, stolik: Stolik) {
+        this.Start = start
+        this.Koniec = end
         this.Stolik = stolik
     }
 }

@@ -1,7 +1,8 @@
 import e from "express"
 import { Danie } from "./danie"
 import { Pozycja, Pracownik } from "./pracownik"
-import { Stolik, Status as StolikStatus } from "./Stolik"
+import { Stolik, Status as StolikStatus } from "./stolik"
+import { Rezerwacja } from "./rezerwacja"
 
 export class Restauracja {
     private _name: string = "TBA"
@@ -13,6 +14,7 @@ export class Restauracja {
     private _menu: Danie[] = []
     private _zatrudnieni: Pracownik[] = []
     private _stoliki: Stolik[] = []
+    private _rezerwacje: Rezerwacja[] = []
 
     get Name() { return this._name }
     get Adres() { return this._adres }
@@ -115,7 +117,7 @@ export class Restauracja {
             return true
         }
     }
-    
+
     ZmienStatusStolika(stolik: Stolik, status: StolikStatus): boolean {
         let tmp = this._stoliki.find(element => element.Nazwa == stolik.Nazwa)
         if (tmp && tmp.Status != status) {
@@ -127,6 +129,7 @@ export class Restauracja {
             return false
         }
     }
+
     UsunStolik(stolik: Stolik): boolean {
         if (this._stoliki.find(element => element.Nazwa == stolik.Nazwa)) {
             this._stoliki = this._stoliki.splice(this._stoliki.findIndex(element => element.Nazwa == stolik.Nazwa, 1))
@@ -135,5 +138,16 @@ export class Restauracja {
         else {
             return false
         }
+    }
+
+    DodajRezerwacje(start: Date, end: Date, iloscOsob: number) {
+        let inneRezerwacje = this._rezerwacje.filter(rezerwacja => (start <= rezerwacja.Start && rezerwacja.Start<end) || (end >= rezerwacja.Koniec && rezerwacja.Koniec>start)) //inne rezerwacje w tym terminie
+        let wolneStoliki = this._stoliki.filter(element => !inneRezerwacje.some(rezerwacja => rezerwacja.Stolik == element )) //wybieranie nie zajętego stolika w tym okresie czasu
+        const stolik = wolneStoliki.find(stolik => stolik.IloscOsob >= iloscOsob)
+        if (stolik) { 
+            this._rezerwacje.push(new Rezerwacja(start, end, stolik)) 
+        }
+        console.log(wolneStoliki)
+        //console.log(inneRezerwacje)
     }
 }
