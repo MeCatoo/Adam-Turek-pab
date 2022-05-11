@@ -202,6 +202,7 @@ export class StorageHandle {
             default:
                 throw new Error()
         }
+        this.updateStorage()
     }
     IsTagExist(name: string): boolean {
         const tag = this._tags.find(function (tag: Tag): boolean {
@@ -229,7 +230,7 @@ export class StorageHandle {
     private async updateStorage(): Promise<void> {
         const tmp = [this._notes, this._tags, this._users]
 
-        console.log(JSON.stringify(tmp))
+        //console.log(JSON.stringify(tmp))
         try {
             await fs.promises.writeFile(this.storeFile, JSON.stringify(tmp));
         } catch (err) {
