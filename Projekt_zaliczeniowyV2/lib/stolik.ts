@@ -22,10 +22,10 @@ export class Stolik{
     set Status(name: Status) {
             this._status = name
     }
-    constructor(nazwa: string, iloscosob: number, status?: Status){
+    constructor(nazwa: string, iloscosob: number, status?: string){
         this.Nazwa = nazwa 
         this.IloscOsob = iloscosob
-        this.Status = status ?? Status.niedostepny
+        this.Status = Status[status as keyof typeof Status] ?? Status.niedostepny
     }
 }
 export enum Status{

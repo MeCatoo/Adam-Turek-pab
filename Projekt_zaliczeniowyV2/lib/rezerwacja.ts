@@ -1,7 +1,7 @@
 import { Status, Stolik } from "./stolik";
 
 export class Rezerwacja {
-    private _stolik: Stolik = new Stolik("test", 1,)
+    private _stolik: Stolik = new Stolik("test", 1)
     private _start: Date = new Date()
     private _koniec: Date = new Date()
     private _imie: string = ""
