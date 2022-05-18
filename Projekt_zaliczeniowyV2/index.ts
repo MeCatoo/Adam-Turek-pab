@@ -15,7 +15,7 @@ import { StorageHandle } from "./lib/storageHandle"
 // console.log(new Zamowienie(dania,new Stolik("asdasd", 1), new Pracownik("Imie", "Nazwisko")))
 // console.log(<S>S.zlozone)
 let storageHandle = new StorageHandle()
-storageHandle.stoliki.push(new Stolik("nazwa",1, "213"))
+storageHandle.stoliki.push(new Stolik("nazwa", 1, "213"))
 console.log(storageHandle.stoliki)
 // restauracja.DodajStolik(new Stolik("nazwa", 1, Status.wolny))
 // restauracja.DodajRezerwacje(new Date(Date.now() + 10), new Date(Date.now() + 11111), 1)
@@ -44,7 +44,7 @@ app.put('/restauracja', (function (req: Request, res: Response) {
         storageHandle.restauracja.Telephone = req.body.telephone
     if (req.body.telephone)
         storageHandle.restauracja.Telephone = req.body.telephone
-        storageHandle.UpdateStorage()
+    storageHandle.UpdateStorage()
     res.status(200).send(storageHandle.restauracja);
 }))
 app.get('/stoliki', (function (req: Request, res: Response) {
@@ -54,65 +54,89 @@ app.get('/stoliki', (function (req: Request, res: Response) {
     let tmpStoliki = storageHandle.stoliki
     tmpStoliki.forEach(element => {
         if (zajeteStoliki.includes(element))
-        element.Status = Status.zajety
-})
+            element.Status = Status.zajety
+    })
     res.status(200).send(tmpStoliki)
 }))
 
 app.get('/stolik/:name', (function (req: Request, res: Response) {
     const stolik = storageHandle.stoliki.find(stolik => stolik.Nazwa = req.params.name)
-    if(stolik)
-    res.status(200).send(stolik)
+    if (stolik)
+        res.status(200).send(stolik)
     else
-    res.status(404).send("Nie odnalezniono stolika")
+        res.status(404).send("Nie odnalezniono stolika")
 }))
-app.post('/stolik', (function (req: Request, res: Response){
-    if(!req.body.name)
-    return res.status(400).send("Podaj nazwę stolika")
+app.post('/stolik', (function (req: Request, res: Response) {
+    if (!req.body.name)
+        return res.status(400).send("Podaj nazwę stolika")
     const stolik = storageHandle.stoliki.find(stolik => stolik.Nazwa == req.body.name)
-    if(stolik)
-    return res.status(400).send("Stolik już istnieje")
-    else if(req.body.iloscOsob){
-    const utworzonyStolik = new Stolik(req.body.name, +req.body.iloscOsob, req.body.status ?? "")
-    storageHandle.stoliki.push(utworzonyStolik)
-    storageHandle.UpdateStorage()
-    return res.status(200).send(utworzonyStolik)
-}
+    if (stolik)
+        return res.status(400).send("Stolik już istnieje")
+    else if (req.body.iloscOsob) {
+        const utworzonyStolik = new Stolik(req.body.name, +req.body.iloscOsob, req.body.status ?? "")
+        storageHandle.stoliki.push(utworzonyStolik)
+        storageHandle.UpdateStorage()
+        return res.status(200).send(utworzonyStolik)
+    }
 }))
 app.put('/stolik/:name', (function (req: Request, res: Response) {
     const stolik = storageHandle.stoliki.find(stolik => stolik.Nazwa === req.params.name)
     const stolikIndex = storageHandle.stoliki.findIndex(stolik => stolik.Nazwa === req.params.name)
-    if(stolik)
-    {
+    if (stolik) {
         let toEditStolik = storageHandle.stoliki[stolikIndex]
-        if(req.body.name){
-            if(storageHandle.stoliki.find(stolik => stolik.Nazwa == req.body.name))
-            return res.status(400).send("Stolik z taką nazwą już istnieje")
+        if (req.body.name) {
+            if (storageHandle.stoliki.find(stolik => stolik.Nazwa == req.body.name))
+                return res.status(400).send("Stolik z taką nazwą już istnieje")
             toEditStolik.Nazwa = req.body.name
         }
-        if(req.body.iloscOsob)
-        toEditStolik.IloscOsob = req.body.iloscOsob
-        if(req.body.status)
-        toEditStolik.Status = Status[req.body.status as keyof typeof Status ]
-        storageHandle.stoliki.splice(stolikIndex, 1 ,toEditStolik)
+        if (req.body.iloscOsob)
+            toEditStolik.IloscOsob = req.body.iloscOsob
+        if (req.body.status)
+            toEditStolik.Status = Status[req.body.status as keyof typeof Status]
+        storageHandle.stoliki.splice(stolikIndex, 1, toEditStolik)
         storageHandle.UpdateStorage()
         return res.status(200).send(toEditStolik)
     }
     else
-    res.status(404).send("Nie odnalezniono stolika")
+        res.status(404).send("Nie odnalezniono stolika")
 }))
 app.delete('/stolik/:name', (function (req: Request, res: Response) {
     const stolik = storageHandle.stoliki.find(stolik => stolik.Nazwa = req.params.name)
-    if(stolik){
-    storageHandle.stoliki.slice(storageHandle.stoliki.findIndex(stolik => stolik.Nazwa = req.params.name),1)
-    res.status(200).send(stolik)}
+    if (stolik) {
+        storageHandle.stoliki.slice(storageHandle.stoliki.findIndex(stolik => stolik.Nazwa = req.params.name), 1)
+        res.status(200).send(stolik)
+    }
     else
-    res.status(404).send("Nie odnalezniono stolika")
+        res.status(404).send("Nie odnalezniono stolika")
 }))
-app.get('/menu', (function (req: Request, res: Response){
+app.get('/menu', (function (req: Request, res: Response) {
     res.status(200).send(storageHandle.menu)
 }))
-
+app.get('/menu/:nazwa', (function (req: Request, res: Response) {
+    const danie = storageHandle.menu.find(element => element.Nazwa = req.params.nazwa)
+    if (danie)
+        return res.status(200).send(danie)
+    else
+        return res.status(404).send("Nie odnaleziono danie")
+}))
+app.post('/menu', function (req: Request, res: Response) {
+    let danie: Danie;
+    if (req.body.nazwa && req.body.cena && req.body.kategoria) {
+        if ((Object.values(Kategoria).includes(req.body.kategoria))) {
+            danie = new Danie(req.body.nazwa, req.body.cena, req.body.kategoria)
+            storageHandle.menu.push(danie)
+            res.status(200).send(danie)
+        }
+        else
+            res.status(400).send("Błędna kategoria")
+    }
+    else {
+        res.status(400).send("Niepoprawne dane")
+    }
+})
+// app.put('/menu/:nazwa', function (req: Request, res: Response){
+//     const danie = storageHandle.
+// })
 
 // DodajDanie(danie: Danie): boolean {
 //     if (this._menu.find(element => element.Nazwa == danie.Nazwa))

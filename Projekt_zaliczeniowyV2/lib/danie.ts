@@ -3,10 +3,10 @@ export class Danie {
     Cena: number
     Kategoria: Kategoria
 
-    constructor(nazwa: string, cena: number, kategoria: Kategoria){
+    constructor(nazwa: string, cena: number, kategoria: string){
         this.Nazwa = nazwa
         this.Cena = cena
-        this.Kategoria = kategoria
+        this.Kategoria = Kategoria[kategoria as keyof typeof Kategoria] ?? Kategoria.danie_główne
     }
 }
 export enum Kategoria{
