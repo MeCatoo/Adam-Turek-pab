@@ -45,8 +45,7 @@ const stolikSchema = new mongoose.Schema({
 })
 const stolikModel = mongoose.model("stolik", stolikSchema)
 //const newstolika = new stolikModel({nazwa: "New Name", iloscOsob: 5})
-const newstolika = stolikModel.find()
-console.log(newstolika)
+stolikModel.find({}).exec().then((data: any) => console.log("Query res", data))
 //newstolika.save();
 const rezerwacjaSchema = new mongoose.Schema({
     stolik: {
