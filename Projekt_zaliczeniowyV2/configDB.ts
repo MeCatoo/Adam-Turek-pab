@@ -1,8 +1,9 @@
 //import mongoose from 'mongoose'
 
 import { Restauracja } from "./lib/restauracja";
+import { Stolik } from "./lib/stolik";
 
-const mongoose = require('mongoose');
+export const mongoose = require('mongoose');
 mongoose.connect('mongodb+srv://MeCatooo:123pass@cluster0.hlmgs.mongodb.net/restauracja?retryWrites=true&w=majority')
 
 const RestauracjaSchema = new mongoose.Schema({
@@ -27,9 +28,12 @@ const RestauracjaSchema = new mongoose.Schema({
     },
 });
 
-const restauracjaModel = mongoose.model("restauracja", RestauracjaSchema);
+export const restauracjaModel = mongoose.model("restauracja", RestauracjaSchema);
 
 const stolikSchema = new mongoose.Schema({
+    _id:  {
+        type: mongoose.Types.ObjectId
+    },
     nazwa: {
         type: String,
         required: true
@@ -43,22 +47,24 @@ const stolikSchema = new mongoose.Schema({
         default: "Niedostepny"
     },
 })
-const stolikModel = mongoose.model("stolik", stolikSchema)
+export const stolikModel = mongoose.model("stolik", stolikSchema)
 //const newstolika = new stolikModel({nazwa: "New Name", iloscOsob: 5})
-stolikModel.find({}).exec().then((data: any) => console.log("Query res", data))
+const data = stolikModel.find({}).exec() //=> 
+//console.log("Query res", <Stolik>data)
 //newstolika.save();
 const rezerwacjaSchema = new mongoose.Schema({
+    //_id: new mongoose.Types.ObjectId(),
     stolik: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "stolik",
+        ref: 'stolikSchema',
         required: true
     },
     start: {
-        type: Date,
+        type: String,
         required: true
     },
     koniec: {
-        type: Date,
+        type: String,
         required: true
     },
     imie: {
@@ -70,7 +76,7 @@ const rezerwacjaSchema = new mongoose.Schema({
         required: true
     },
 })
-const rezerwacjaModel = mongoose.model("stolik", stolikSchema)
+export const rezerwacjaModel = mongoose.model("rezerwacja", rezerwacjaSchema)
 
 // const newRezerwacja = new rezerwacjaModel({stolik: newstolika, 
 //     start: new Date(Date.now()),

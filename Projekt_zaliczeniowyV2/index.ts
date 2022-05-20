@@ -7,6 +7,7 @@ import { Danie, Kategoria } from "./lib/danie";
 import express from 'express'
 import { Request, Response } from 'express'
 import { StorageHandle } from "./lib/storageHandle"
+import { Console } from "console";
 
 // console.log(new Restauracja("Nazwa", "Zacny adres"))
 // console.log(new Pracownik("Imie", "Nazwisko"))
@@ -15,8 +16,9 @@ import { StorageHandle } from "./lib/storageHandle"
 // console.log(new Zamowienie(dania,new Stolik("asdasd", 1), new Pracownik("Imie", "Nazwisko")))
 // console.log(<S>S.zlozone)
 let storageHandle = new StorageHandle()
-storageHandle.stoliki.push(new Stolik("nazwa", 1, "213"))
-console.log(storageHandle.stoliki)
+//storageHandle.PostRezerwacja({start:new Date(), koniec:new Date(),stolik: new Stolik({nazwa:"nazwa",iloscOsob:1,status: Status.niedostepny}), imie:"req.body.imie", nazwisko:"req.body.nazwisko"})
+//storageHandle.stoliki.push(new Stolik("nazwa", 1, "213"))
+//console.log(storageHandle.stoliki)
 // restauracja.DodajStolik(new Stolik("nazwa", 1, Status.wolny))
 // restauracja.DodajRezerwacje(new Date(Date.now() + 10), new Date(Date.now() + 11111), 1)
 // restauracja.DodajRezerwacje(new Date(Date.now() + 10), new Date(Date.now() + 11111), 1)
@@ -24,91 +26,113 @@ console.log(storageHandle.stoliki)
 const app = express()
 app.use(express.json())
 
-app.get('/restauracja', (function (req: Request, res: Response) {
-    res.status(200).send(storageHandle.restauracja)
+app.get('/restauracja', (async function (req: Request, res: Response) {
+    res.status(200).send(await storageHandle.GetRestauracja())
 }))
-app.put('/restauracja', (function (req: Request, res: Response) {
-    if (req.body.name)
-        storageHandle.restauracja.Name = req.body.name
-    if (req.body.adres)
-        storageHandle.restauracja.Adres = req.body.adres
-    if (req.body.telephone)
-        storageHandle.restauracja.Telephone = req.body.telephone
-    if (req.body.nip)
-        storageHandle.restauracja.Nip = req.body.nip
-    if (req.body.email)
-        storageHandle.restauracja.Email = req.body.email
-    if (req.body.www)
-        storageHandle.restauracja.WWW = req.body.www
-    if (req.body.telephone)
-        storageHandle.restauracja.Telephone = req.body.telephone
-    if (req.body.telephone)
-        storageHandle.restauracja.Telephone = req.body.telephone
-    storageHandle.UpdateStorage()
-    res.status(200).send(storageHandle.restauracja);
+app.put('/restauracja', (async function (req: Request, res: Response) {
+    const savae = await storageHandle.UpdateRestauracja(new Restauracja({
+        name: req.body.name, adres: req.body.adres,
+        telephone: req.body.telephone, nip: req.body.nip, email: req.body.email, www: req.body.www
+    }))
+    res.status(200).send(savae);
 }))
-app.get('/stoliki', (function (req: Request, res: Response) {
-    const now = new Date(Date.now())
-    let inneRezerwacje = storageHandle.rezerwacje.filter(rezerwacja => rezerwacja.Start < now && rezerwacja.Koniec > now)
-    let zajeteStoliki = storageHandle.stoliki.filter(element => inneRezerwacje.some(rezerwacja => rezerwacja.Stolik == element)) //wybieranie nie zajętego stolika w tym okresie czasu
-    let tmpStoliki = storageHandle.stoliki
-    tmpStoliki.forEach(element => {
-        if (zajeteStoliki.includes(element))
-            element.Status = Status.zajety
-    })
-    res.status(200).send(tmpStoliki)
+app.get('/stoliki', (async function (req: Request, res: Response) {
+    res.status(200).send(await storageHandle.GetStoliki())
 }))
+app.get('/rezerwacje', (async function (req: Request, res: Response) {
+    res.status(200).send(await storageHandle.GetRezerwacje())
+}))
+app.post('/rezerwacja', (async function (req: Request, res: Response) {
+    if (!req.body.start || !req.body.end || !req.body.iloscOsob || !req.body.imie || !req.body.nazwisko)
+        return res.status(400).send("Podaj daty i ilosc osob")
+    const _rezerwacje = await storageHandle.GetRezerwacje()
+    const _stoliki = await storageHandle.GetStoliki()
+    let inneRezerwacje = _rezerwacje.filter(rezerwacja => (req.body.start <= rezerwacja.start && rezerwacja.start < req.body.end) || (req.body.end >= rezerwacja.koniec && rezerwacja.koniec > req.body.start)) //inne rezerwacje w tym terminie
+    let wolneStoliki = _stoliki.filter(element => !inneRezerwacje.some(rezerwacja => rezerwacja.stolik == element)) //wybieranie nie zajętego stolika w tym okresie czasu
+    const stolik = wolneStoliki.find(stolik => stolik.iloscOsob >= req.body.iloscOsob)
+    if (stolik) {
+        const tmp = new Rezerwacja({start:req.body.start, koniec:req.body.end,stolik: stolik, imie:req.body.imie, nazwisko:req.body.nazwisko})
+        console.log("Tutaj jestem",wolneStoliki)
+        storageHandle.PostRezerwacja(tmp)
+        return res.status(200).send(stolik)
+    }
+    else{
+        return res.status(404).send("Brak wolnych stolików")
+    }
 
-app.get('/stolik/:name', (function (req: Request, res: Response) {
-    const stolik = storageHandle.stoliki.find(stolik => stolik.Nazwa = req.params.name)
-    if (stolik)
-        res.status(200).send(stolik)
-    else
-        res.status(404).send("Nie odnalezniono stolika")
 }))
-app.post('/stolik', (function (req: Request, res: Response) {
-    if (!req.body.name)
-        return res.status(400).send("Podaj nazwę stolika")
-    const stolik = storageHandle.stoliki.find(stolik => stolik.Nazwa == req.body.name)
-    if (stolik)
-        return res.status(400).send("Stolik już istnieje")
-    else if (req.body.iloscOsob) {
-        const utworzonyStolik = new Stolik(req.body.name, +req.body.iloscOsob, req.body.status ?? "")
-        storageHandle.stoliki.push(utworzonyStolik)
-        storageHandle.UpdateStorage()
-        return res.status(200).send(utworzonyStolik)
-    }
-}))
-app.put('/stolik/:name', (function (req: Request, res: Response) {
-    const stolik = storageHandle.stoliki.find(stolik => stolik.Nazwa === req.params.name)
-    const stolikIndex = storageHandle.stoliki.findIndex(stolik => stolik.Nazwa === req.params.name)
-    if (stolik) {
-        let toEditStolik = storageHandle.stoliki[stolikIndex]
-        if (req.body.name) {
-            if (storageHandle.stoliki.find(stolik => stolik.Nazwa == req.body.name))
-                return res.status(400).send("Stolik z taką nazwą już istnieje")
-            toEditStolik.Nazwa = req.body.name
-        }
-        if (req.body.iloscOsob)
-            toEditStolik.IloscOsob = req.body.iloscOsob
-        if (req.body.status)
-            toEditStolik.Status = Status[req.body.status as keyof typeof Status]
-        storageHandle.stoliki.splice(stolikIndex, 1, toEditStolik)
-        storageHandle.UpdateStorage()
-        return res.status(200).send(toEditStolik)
-    }
-    else
-        res.status(404).send("Nie odnalezniono stolika")
-}))
-app.delete('/stolik/:name', (function (req: Request, res: Response) {
-    const stolik = storageHandle.stoliki.find(stolik => stolik.Nazwa = req.params.name)
-    if (stolik) {
-        storageHandle.stoliki.slice(storageHandle.stoliki.findIndex(stolik => stolik.Nazwa = req.params.name), 1)
-        res.status(200).send(stolik)
-    }
-    else
-        res.status(404).send("Nie odnalezniono stolika")
-}))
+// DodajRezerwacje(start: Date, end: Date, iloscOsob: number) {
+//     let inneRezerwacje = this._rezerwacje.filter(rezerwacja => (start <= rezerwacja.Start && rezerwacja.Start<end) || (end >= rezerwacja.Koniec && rezerwacja.Koniec>start)) //inne rezerwacje w tym terminie
+//     let wolneStoliki = this._stoliki.filter(element => !inneRezerwacje.some(rezerwacja => rezerwacja.Stolik == element )) //wybieranie nie zajętego stolika w tym okresie czasu
+//     const stolik = wolneStoliki.find(stolik => stolik.IloscOsob >= iloscOsob)
+//     if (stolik) { 
+//         this._rezerwacje.push(new Rezerwacja(start, end, stolik)) 
+//     }
+//     console.log(wolneStoliki)
+//     //console.log(inneRezerwacje)
+// }
+// app.get('/stoliki', (function (req: Request, res: Response) {
+//     const now = new Date(Date.now())
+//     let inneRezerwacje = storageHandle.rezerwacje.filter(rezerwacja => rezerwacja.Start < now && rezerwacja.Koniec > now)
+//     let zajeteStoliki = storageHandle.stoliki.filter(element => inneRezerwacje.some(rezerwacja => rezerwacja.Stolik == element)) //wybieranie nie zajętego stolika w tym okresie czasu
+//     let tmpStoliki = storageHandle.stoliki
+//     tmpStoliki.forEach(element => {
+//         if (zajeteStoliki.includes(element))
+//             element.Status = Status.zajety
+//     })
+//     res.status(200).send(tmpStoliki)
+// }))
+
+// app.get('/stolik/:name', (function (req: Request, res: Response) {
+//     const stolik = storageHandle.stoliki.find(stolik => stolik.Nazwa = req.params.name)
+//     if (stolik)
+//         res.status(200).send(stolik)
+//     else
+//         res.status(404).send("Nie odnalezniono stolika")
+// }))
+// app.post('/stolik', (function (req: Request, res: Response) {
+//     if (!req.body.name)
+//         return res.status(400).send("Podaj nazwę stolika")
+//     const stolik = storageHandle.stoliki.find(stolik => stolik.Nazwa == req.body.name)
+//     if (stolik)
+//         return res.status(400).send("Stolik już istnieje")
+//     else if (req.body.iloscOsob) {
+//         const utworzonyStolik = new Stolik(req.body.name, +req.body.iloscOsob, req.body.status ?? "")
+//         storageHandle.stoliki.push(utworzonyStolik)
+//         storageHandle.UpdateStorage()
+//         return res.status(200).send(utworzonyStolik)
+//     }
+// }))
+// app.put('/stolik/:name', (function (req: Request, res: Response) {
+//     const stolik = storageHandle.stoliki.find(stolik => stolik.Nazwa === req.params.name)
+//     const stolikIndex = storageHandle.stoliki.findIndex(stolik => stolik.Nazwa === req.params.name)
+//     if (stolik) {
+//         let toEditStolik = storageHandle.stoliki[stolikIndex]
+//         if (req.body.name) {
+//             if (storageHandle.stoliki.find(stolik => stolik.Nazwa == req.body.name))
+//                 return res.status(400).send("Stolik z taką nazwą już istnieje")
+//             toEditStolik.Nazwa = req.body.name
+//         }
+//         if (req.body.iloscOsob)
+//             toEditStolik.IloscOsob = req.body.iloscOsob
+//         if (req.body.status)
+//             toEditStolik.Status = Status[req.body.status as keyof typeof Status]
+//         storageHandle.stoliki.splice(stolikIndex, 1, toEditStolik)
+//         storageHandle.UpdateStorage()
+//         return res.status(200).send(toEditStolik)
+//     }
+//     else
+//         res.status(404).send("Nie odnalezniono stolika")
+// }))
+// app.delete('/stolik/:name', (function (req: Request, res: Response) {
+//     const stolik = storageHandle.stoliki.find(stolik => stolik.Nazwa = req.params.name)
+//     if (stolik) {
+//         storageHandle.stoliki.slice(storageHandle.stoliki.findIndex(stolik => stolik.Nazwa = req.params.name), 1)
+//         res.status(200).send(stolik)
+//     }
+//     else
+//         res.status(404).send("Nie odnalezniono stolika")
+// }))
 app.get('/menu', (function (req: Request, res: Response) {
     res.status(200).send(storageHandle.menu)
 }))
@@ -209,15 +233,5 @@ app.post('/menu', function (req: Request, res: Response) {
 //     }
 // }
 
-// DodajRezerwacje(start: Date, end: Date, iloscOsob: number) {
-//     let inneRezerwacje = this._rezerwacje.filter(rezerwacja => (start <= rezerwacja.Start && rezerwacja.Start<end) || (end >= rezerwacja.Koniec && rezerwacja.Koniec>start)) //inne rezerwacje w tym terminie
-//     let wolneStoliki = this._stoliki.filter(element => !inneRezerwacje.some(rezerwacja => rezerwacja.Stolik == element )) //wybieranie nie zajętego stolika w tym okresie czasu
-//     const stolik = wolneStoliki.find(stolik => stolik.IloscOsob >= iloscOsob)
-//     if (stolik) { 
-//         this._rezerwacje.push(new Rezerwacja(start, end, stolik)) 
-//     }
-//     console.log(wolneStoliki)
-//     //console.log(inneRezerwacje)
-// }
 
 app.listen(3000)
