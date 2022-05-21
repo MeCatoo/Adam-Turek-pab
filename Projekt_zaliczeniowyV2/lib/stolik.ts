@@ -1,5 +1,5 @@
 export class Stolik{
-    _id: string = "0"
+    //_id: string = "0"
      nazwa: string = ""
      iloscOsob: number = 1
      status: Status = Status.niedostepny
@@ -32,7 +32,7 @@ export class Stolik{
         this.nazwa = stolik.nazwa
         this.iloscOsob = stolik.iloscOsob
         this.status = stolik.status
-        this._id = stolik._id
+        //this._id = stolik._id
     }
 }
 export enum Status{

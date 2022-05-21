@@ -39,8 +39,18 @@ app.put('/restauracja', (async function (req: Request, res: Response) {
 app.get('/stoliki', (async function (req: Request, res: Response) {
     res.status(200).send(await storageHandle.GetStoliki())
 }))
+app.get('/stolik/:id', (async function (req: Request, res: Response) {
+    res.status(200).send(await storageHandle.GetStolik(req.params.id))
+}))
+app.post('/stolik', (async function (req: Request, res: Response) {
+    if(req.body.nazwa && req.body.iloscOsob)
+    res.status(200).send(await storageHandle.PostStolik(new Stolik({nazwa: req.body.nazwa, iloscOsob: req.body.iloscOsob, status: Status[req.body.status as keyof typeof Status] ?? Status.niedostepny})))
+}))
 app.get('/rezerwacje', (async function (req: Request, res: Response) {
     res.status(200).send(await storageHandle.GetRezerwacje())
+}))
+app.get('/rezerwacja/:id', (async function (req: Request, res: Response) {
+    res.status(200).send(await storageHandle.GetRezerwacja(req.params.id))
 }))
 app.post('/rezerwacja', (async function (req: Request, res: Response) {
     if (!req.body.start || !req.body.end || !req.body.iloscOsob || !req.body.imie || !req.body.nazwisko)
@@ -49,16 +59,22 @@ app.post('/rezerwacja', (async function (req: Request, res: Response) {
     const _stoliki = await storageHandle.GetStoliki()
     let inneRezerwacje = _rezerwacje.filter(rezerwacja => (req.body.start <= rezerwacja.start && rezerwacja.start < req.body.end) || (req.body.end >= rezerwacja.koniec && rezerwacja.koniec > req.body.start)) //inne rezerwacje w tym terminie
     let wolneStoliki = _stoliki.filter(element => !inneRezerwacje.some(rezerwacja => rezerwacja.stolik == element)) //wybieranie nie zajętego stolika w tym okresie czasu
-    const stolik = wolneStoliki.find(stolik => stolik.iloscOsob >= req.body.iloscOsob)
+    const stolik = wolneStoliki.find(stolik => stolik.iloscOsob >= req.body.iloscOsob && stolik.status != Status.niedostepny)
     if (stolik) {
         const tmp = new Rezerwacja({start:req.body.start, koniec:req.body.end,stolik: stolik, imie:req.body.imie, nazwisko:req.body.nazwisko})
-        console.log("Tutaj jestem",wolneStoliki)
         storageHandle.PostRezerwacja(tmp)
         return res.status(200).send(stolik)
     }
     else{
         return res.status(404).send("Brak wolnych stolików")
     }
+
+}))
+app.delete('/rezerwacja/:id', (async function (req: Request, res: Response) {
+    storageHandle.DeleteRezerwacja(req.params.id)
+    res.status(200).send("Usunięto")
+}))
+app.get('/menu', (async function (req: Request, res: Response) {
 
 }))
 // DodajRezerwacje(start: Date, end: Date, iloscOsob: number) {
@@ -143,21 +159,21 @@ app.get('/menu/:nazwa', (function (req: Request, res: Response) {
     else
         return res.status(404).send("Nie odnaleziono danie")
 }))
-app.post('/menu', function (req: Request, res: Response) {
-    let danie: Danie;
-    if (req.body.nazwa && req.body.cena && req.body.kategoria) {
-        if ((Object.values(Kategoria).includes(req.body.kategoria))) {
-            danie = new Danie(req.body.nazwa, req.body.cena, req.body.kategoria)
-            storageHandle.menu.push(danie)
-            res.status(200).send(danie)
-        }
-        else
-            res.status(400).send("Błędna kategoria")
-    }
-    else {
-        res.status(400).send("Niepoprawne dane")
-    }
-})
+// app.post('/menu', function (req: Request, res: Response) {
+//     let danie: Danie;
+//     if (req.body.nazwa && req.body.cena && req.body.kategoria) {
+//         if ((Object.values(Kategoria).includes(req.body.kategoria))) {
+//             danie = new Danie(req.body.nazwa, req.body.cena, req.body.kategoria)
+//             storageHandle.menu.push(danie)
+//             res.status(200).send(danie)
+//         }
+//         else
+//             res.status(400).send("Błędna kategoria")
+//     }
+//     else {
+//         res.status(400).send("Niepoprawne dane")
+//     }
+// })
 // app.put('/menu/:nazwa', function (req: Request, res: Response){
 //     const danie = storageHandle.
 // })

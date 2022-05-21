@@ -5,7 +5,7 @@ import { Rezerwacja } from "./rezerwacja"
 import { Danie } from "./danie"
 import { Produkt } from "./produkt"
 import { Zamowienie } from "./zamowienie"
-import { stolikModel, restauracjaModel, rezerwacjaModel, mongoose } from "../configDB"
+import { stolikModel, restauracjaModel, rezerwacjaModel, danieModel } from "../configDB"
 import { Mode } from "fs"
 
 export class StorageHandle {
@@ -18,7 +18,7 @@ export class StorageHandle {
     zamowienia: Zamowienie[] = []
 
     constructor() {
-        
+
     }
 
 
@@ -31,15 +31,15 @@ export class StorageHandle {
         // console.log(data.toObject().constructor.name)
     }
 
-    async GetRestauracja():Promise<Restauracja> {
+    async GetRestauracja(): Promise<Restauracja> {
         const save = new Restauracja(await restauracjaModel.findOne({}).exec())
         //console.log(new Restauracja(save))
         return save
-        
+
     }
     async UpdateRestauracja(restauracja: Restauracja) {
         const newRestauracja = new restauracjaModel(await restauracjaModel.findOne({}).exec())
-        
+
         if (restauracja.name)
             newRestauracja.name = restauracja.name
         if (restauracja.adres)
@@ -54,27 +54,60 @@ export class StorageHandle {
             newRestauracja.www = restauracja.www
         return await newRestauracja.save()
     }
-    async GetStoliki(): Promise<Stolik[]>{
+    async GetStoliki(): Promise<Stolik[]> {
         const tmp: Stolik[] = []
         const save = await stolikModel.find({}).exec()
         console.log(save)
-        save.forEach((element:Stolik) => tmp.push(new Stolik(element)));
+        save.forEach((element: Stolik) => tmp.push(new Stolik(element)));
         return tmp
     }
-    async GetStolik(nazwa: string): Promise<Stolik>{
-        const data = await stolikModel.findOne({nazwa: nazwa}).exec()
+    async GetStolik(nazwa: string): Promise<Stolik> {
+        const data = await stolikModel.findOne({ nazwa: nazwa }).exec()
         return new Stolik(data)
     }
-    async GetRezerwacje(): Promise<Rezerwacja[]>{
-        const tmp: Rezerwacja[] = []
+    async PostStolik(stolik: Stolik){
+        const newStolik = await new stolikModel(stolik)
+        newStolik.save()
+    }
+    async DeleteStolik(nazwa: string){
+        const newDanie = await new danieModel.deleteOne({nazwa:nazwa})
+    }
+    async GetRezerwacja(id: string): Promise<Rezerwacja> {
+        const data = await rezerwacjaModel.findOne({ _id: id }).exec()
+        return new Rezerwacja(data)
+    }
+    async GetRezerwacje(): Promise<Rezerwacja[]> {
+        let tmp: Rezerwacja[] = []
         const save = await rezerwacjaModel.find({}).exec()
-        save.forEach((element:Rezerwacja) => tmp.push(new Rezerwacja(element)));
+        await save.forEach((element: Rezerwacja) => { 
+            // element.stolik = new Stolik(stolikModel.findOne({_id: element.stolik._id }).exec())
+            // console.log(element.stolik._id)
+            tmp.push(new Rezerwacja(element))
+        });
+        //await tmp.forEach(element => element.stolik = new Stolik( stolikModel.findOne({_id:element.stolik._id})))
         return tmp
     }
-    async PostRezerwacja(rezerwacja: Rezerwacja){
+    async PostRezerwacja(rezerwacja: Rezerwacja) {
         //const newRezerwacja = new rezerwacjaModel({stolik: rezerwacja.stolik._id, start: rezerwacja.start, koniec: rezerwacja.koniec, imie: rezerwacja.imie, nazwisko: rezerwacja.nazwisko})
-        const newRezerwacja = new rezerwacjaModel(rezerwacja)
+        const newRezerwacja = await new rezerwacjaModel(rezerwacja)
         //console.log(newRezerwacja)
-        newRezerwacja.save()
+        await newRezerwacja.save()
+    }
+    async DeleteRezerwacja(id: string) {
+        const newRezerwacja = await new rezerwacjaModel.deleteOne({ _id: id }).exec()
+    }
+    async GetMenu(): Promise<Danie[]> {
+        let tmp: Danie[] = []
+        const newDanie = await new danieModel.find().exec()
+        newDanie.forEach((element: Danie) => tmp.push(new Danie(element)))
+        return tmp
+    }
+    async GetDanie(nazwa: string): Promise<Danie> {
+        const newDanie = await new danieModel.findOne({ nazwa: nazwa }).exec()
+        return new Danie(newDanie)
+    }
+    async PostDanie(danie: Danie){
+        const newDanie = await new danieModel(danie)
+        newDanie.save()
     }
 }

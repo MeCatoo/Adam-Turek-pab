@@ -1,5 +1,6 @@
 //import mongoose from 'mongoose'
 
+import { Kategoria } from "./lib/danie";
 import { Restauracja } from "./lib/restauracja";
 import { Stolik } from "./lib/stolik";
 
@@ -78,6 +79,21 @@ const rezerwacjaSchema = new mongoose.Schema({
 })
 export const rezerwacjaModel = mongoose.model("rezerwacja", rezerwacjaSchema)
 
+const danieScema = new mongoose.Schema({
+    nazwa: {
+        type: String,
+        required: true
+    },
+    cena: {
+        type: Number,
+        required: true
+    },
+    kategoria: {
+        type: String,
+        required: true
+    }
+})
+export const danieModel = mongoose.model("danie", danieScema)
 // const newRezerwacja = new rezerwacjaModel({stolik: newstolika, 
 //     start: new Date(Date.now()),
 //     koniec: new Date(Date.now()+1000),
