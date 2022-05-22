@@ -36,15 +36,41 @@ app.put('/restauracja', (async function (req: Request, res: Response) {
     }))
     res.status(200).send(savae);
 }))
-app.get('/stoliki', (async function (req: Request, res: Response) {
+app.get('/stoliki/wolne', (async function (req: Request, res: Response) {
     res.status(200).send(await storageHandle.GetStoliki())
 }))
-app.get('/stolik/:id', (async function (req: Request, res: Response) {
-    res.status(200).send(await storageHandle.GetStolik(req.params.id))
+app.get('/stoliki', (async function (req: Request, res: Response) {
+    const now = new Date(Date.now())
+    let inneRezerwacje = (await storageHandle.GetRezerwacje()).filter(rezerwacja => rezerwacja.start < now && rezerwacja.koniec > now)
+    let zajeteStoliki = (await storageHandle.GetStoliki()).filter(element => inneRezerwacje.some(rezerwacja => rezerwacja.stolik == element)) //wybieranie nie zajętego stolika w tym okresie czasu
+    let tmpStoliki = await storageHandle.GetStoliki()
+    await tmpStoliki.forEach(element => {
+        if (zajeteStoliki.includes(element))
+            element.status = Status.zajety
+    })
+    if (tmpStoliki)
+        res.status(200).send(tmpStoliki)
+    else
+        res.status(404).send("Brak wolny stolików")
+}))
+app.get('/stolik/:nazwa', (async function (req: Request, res: Response) {
+    res.status(200).send(await storageHandle.GetStolik(req.params.nazwa))
 }))
 app.post('/stolik', (async function (req: Request, res: Response) {
-    if(req.body.nazwa && req.body.iloscOsob)
-    res.status(200).send(await storageHandle.PostStolik(new Stolik({nazwa: req.body.nazwa, iloscOsob: req.body.iloscOsob, status: Status[req.body.status as keyof typeof Status] ?? Status.niedostepny})))
+    if (!req.body.nazwa || !req.body.iloscOsob)
+        return res.status(400).send("Podaj nazwę i ilość osób")
+    const stolik = new Stolik({ nazwa: req.body.nazwa, iloscOsob: req.body.iloscOsob, status: Status[req.body.status as keyof typeof Status] ?? Status.niedostepny })
+    await storageHandle.PostStolik(stolik)
+    res.status(200).send(stolik)
+}))
+app.put('/stolik/:nazwa', (async function (req: Request, res: Response) {
+    const stolik = new Stolik({ nazwa: req.body.nazwa ?? undefined, iloscOsob: req.body.iloscOsob ?? undefined, status: Status[req.body.status as keyof typeof Status] ?? undefined })
+    storageHandle.UpdateStolik(req.params.nazwa, stolik)
+    res.status(200).send(stolik)
+}))
+app.delete('/stolik/:nazwa', (async function (req: Request, res: Response) {
+    await storageHandle.DeleteStolik(req.params.nazwa)
+    res.status(200).send("Usunięto")
 }))
 app.get('/rezerwacje', (async function (req: Request, res: Response) {
     res.status(200).send(await storageHandle.GetRezerwacje())
@@ -61,22 +87,37 @@ app.post('/rezerwacja', (async function (req: Request, res: Response) {
     let wolneStoliki = _stoliki.filter(element => !inneRezerwacje.some(rezerwacja => rezerwacja.stolik == element)) //wybieranie nie zajętego stolika w tym okresie czasu
     const stolik = wolneStoliki.find(stolik => stolik.iloscOsob >= req.body.iloscOsob && stolik.status != Status.niedostepny)
     if (stolik) {
-        const tmp = new Rezerwacja({start:req.body.start, koniec:req.body.end,stolik: stolik, imie:req.body.imie, nazwisko:req.body.nazwisko})
-        storageHandle.PostRezerwacja(tmp)
+        const tmp = new Rezerwacja({ start: req.body.start, koniec: req.body.end, stolik: stolik, imie: req.body.imie, nazwisko: req.body.nazwisko })
+        await storageHandle.PostRezerwacja(tmp)
         return res.status(200).send(stolik)
     }
-    else{
+    else {
         return res.status(404).send("Brak wolnych stolików")
     }
 
 }))
 app.delete('/rezerwacja/:id', (async function (req: Request, res: Response) {
-    storageHandle.DeleteRezerwacja(req.params.id)
+    await storageHandle.DeleteRezerwacja(req.params.id)
     res.status(200).send("Usunięto")
 }))
 app.get('/menu', (async function (req: Request, res: Response) {
-
+    res.status(200).send(await storageHandle.GetMenu())
 }))
+app.get('/danie/:nazwa', (async function (req: Request, res: Response) {
+    res.status(200).send(await storageHandle.GetDanie(req.params.nazwa))
+}))
+app.post('/danie/:nazwa', (async function (req: Request, res: Response) {
+    if (!req.body.nazwa || !req.body.cena || !req.body.kategoria)
+        res.status(200).send(await storageHandle.PostDanie(new Danie({ nazwa: req.body.nazwa, cena: req.body.cena, kategoria: Kategoria[req.body.kategoria as keyof typeof Kategoria] ?? Kategoria.danie_główne })))
+}))
+app.put('/danie/:nazwa', (async function (req: Request, res: Response) {
+    res.status(200).send(await storageHandle.GetDanie(req.params.nazwa))
+}))
+app.delete('/danie/:id', async function (req: Request, res: Response) {
+    await storageHandle.DeleteDanie(req.params.id)
+    res.status(200).send("Usunięto")
+})
+
 // DodajRezerwacje(start: Date, end: Date, iloscOsob: number) {
 //     let inneRezerwacje = this._rezerwacje.filter(rezerwacja => (start <= rezerwacja.Start && rezerwacja.Start<end) || (end >= rezerwacja.Koniec && rezerwacja.Koniec>start)) //inne rezerwacje w tym terminie
 //     let wolneStoliki = this._stoliki.filter(element => !inneRezerwacje.some(rezerwacja => rezerwacja.Stolik == element )) //wybieranie nie zajętego stolika w tym okresie czasu
@@ -153,7 +194,7 @@ app.get('/menu', (function (req: Request, res: Response) {
     res.status(200).send(storageHandle.menu)
 }))
 app.get('/menu/:nazwa', (function (req: Request, res: Response) {
-    const danie = storageHandle.menu.find(element => element.Nazwa = req.params.nazwa)
+    const danie = storageHandle.menu.find(element => element.nazwa = req.params.nazwa)
     if (danie)
         return res.status(200).send(danie)
     else

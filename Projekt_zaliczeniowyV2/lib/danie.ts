@@ -1,12 +1,12 @@
 export class Danie {
-    Nazwa: string
-    Cena: number
-    Kategoria: Kategoria
+    nazwa: string
+    cena: number
+    kategoria: Kategoria
 
     constructor(danie: Danie){
-        this.Nazwa = danie.Nazwa
-        this.Cena = danie.Cena
-        this.Kategoria = danie.Kategoria
+        this.nazwa = danie.nazwa
+        this.cena = danie.cena
+        this.kategoria = danie.kategoria
     }
 }
 export enum Kategoria{

@@ -32,12 +32,14 @@ const RestauracjaSchema = new mongoose.Schema({
 export const restauracjaModel = mongoose.model("restauracja", RestauracjaSchema);
 
 const stolikSchema = new mongoose.Schema({
-    _id:  {
-        type: mongoose.Types.ObjectId
-    },
+    // _id:  {
+    //     type: mongoose.Types.ObjectId
+    // },
     nazwa: {
         type: String,
-        required: true
+        required: true, 
+        dropDups: true,
+        unique: true
     },
     iloscOsob: {
         type: Number,
@@ -54,7 +56,9 @@ const data = stolikModel.find({}).exec() //=>
 //console.log("Query res", <Stolik>data)
 //newstolika.save();
 const rezerwacjaSchema = new mongoose.Schema({
-    //_id: new mongoose.Types.ObjectId(),
+    // _id:  {
+    //     type: mongoose.Types.ObjectId
+    // },
     stolik: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'stolikSchema',
@@ -93,7 +97,75 @@ const danieScema = new mongoose.Schema({
         required: true
     }
 })
+
 export const danieModel = mongoose.model("danie", danieScema)
+
+const pracownikScema = new mongoose.Schema({
+    imie: {
+        type: String,
+        required: true
+    },
+    nazwisko: {
+        type: Number,
+        required: true
+    },
+    pozycja: {
+        type: String,
+        required: true
+    }
+})
+export const pracownikModel = mongoose.model("pracownik", pracownikScema)
+
+const zamoweienieScema = new mongoose.Schema({
+    pracownik: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'pracownikScema',
+        required: true
+    },
+    stolik: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'stolikkScema',
+        required: true
+    },
+    pozycje: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'stolikkScema',
+        required: true
+    }],
+    cena: {
+        type: Number,
+        required: true
+    },
+    status: {
+        type: String,
+        required: true
+    },
+    dataZamoiwenia: {
+        type: Date,
+        required: true
+    }
+})
+export const zamoweienieModel = mongoose.model("zamowienie", zamoweienieScema)
+
+const produktScema = new mongoose.Schema({
+    nazwa: {
+        type: String,
+        required: true
+    },
+    cena: {
+        type: Number,
+        required: true
+    },
+    ilosc: {
+        type: Number,
+        required: true
+    },
+    jednostkaMiary: {
+        type: String,
+        required: true
+    }
+})
+export const produktModel = mongoose.model("produkt", produktScema)
 // const newRezerwacja = new rezerwacjaModel({stolik: newstolika, 
 //     start: new Date(Date.now()),
 //     koniec: new Date(Date.now()+1000),

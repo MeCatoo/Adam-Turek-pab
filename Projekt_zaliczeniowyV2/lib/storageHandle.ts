@@ -5,7 +5,7 @@ import { Rezerwacja } from "./rezerwacja"
 import { Danie } from "./danie"
 import { Produkt } from "./produkt"
 import { Zamowienie } from "./zamowienie"
-import { stolikModel, restauracjaModel, rezerwacjaModel, danieModel } from "../configDB"
+import { stolikModel, restauracjaModel, rezerwacjaModel, danieModel, pracownikModel, zamoweienieModel } from "../configDB"
 import { Mode } from "fs"
 
 export class StorageHandle {
@@ -65,12 +65,15 @@ export class StorageHandle {
         const data = await stolikModel.findOne({ nazwa: nazwa }).exec()
         return new Stolik(data)
     }
-    async PostStolik(stolik: Stolik){
+    async PostStolik(stolik: Stolik) {
         const newStolik = await new stolikModel(stolik)
         newStolik.save()
     }
-    async DeleteStolik(nazwa: string){
-        const newDanie = await new danieModel.deleteOne({nazwa:nazwa})
+    async DeleteStolik(Nazwa: string) {
+        await stolikModel.deleteOne({ nazwa: Nazwa })
+    }
+    async UpdateStolik(nazwa: string, edited: Stolik) {
+        await stolikModel.findOneAndUpdate({ nazwa: nazwa }, edited)
     }
     async GetRezerwacja(id: string): Promise<Rezerwacja> {
         const data = await rezerwacjaModel.findOne({ _id: id }).exec()
@@ -79,7 +82,7 @@ export class StorageHandle {
     async GetRezerwacje(): Promise<Rezerwacja[]> {
         let tmp: Rezerwacja[] = []
         const save = await rezerwacjaModel.find({}).exec()
-        await save.forEach((element: Rezerwacja) => { 
+        await save.forEach((element: Rezerwacja) => {
             // element.stolik = new Stolik(stolikModel.findOne({_id: element.stolik._id }).exec())
             // console.log(element.stolik._id)
             tmp.push(new Rezerwacja(element))
@@ -94,7 +97,7 @@ export class StorageHandle {
         await newRezerwacja.save()
     }
     async DeleteRezerwacja(id: string) {
-        const newRezerwacja = await new rezerwacjaModel.deleteOne({ _id: id }).exec()
+        await rezerwacjaModel.deleteOne({ _id: id }).exec()
     }
     async GetMenu(): Promise<Danie[]> {
         let tmp: Danie[] = []
@@ -106,8 +109,61 @@ export class StorageHandle {
         const newDanie = await new danieModel.findOne({ nazwa: nazwa }).exec()
         return new Danie(newDanie)
     }
-    async PostDanie(danie: Danie){
+    async PostDanie(danie: Danie) {
         const newDanie = await new danieModel(danie)
         newDanie.save()
     }
+    async DeleteDanie(nazwa: string) {
+        await danieModel.deleteOne({ nazwa: nazwa }).exec()
+    }
+    async GetPracownicy(): Promise<Pracownik[]> {
+        return await pracownikModel.find().exec()
+    }
+    async GetPracownik(imie: string, nazwisko: string): Promise<Pracownik> {
+        return await pracownikModel.findOne({ imie: imie, nazwisko: nazwisko }).exec()
+    }
+    async PostPracownik(pracownik: Pracownik) {
+        const newPracownik = pracownikModel(pracownik)
+        await newPracownik.save()
+    }
+    async UpdatePracownik(imie: string, nazwisko: string, pracownik: Pracownik) {
+        await pracownikModel.findOneAndUpdate({ imie: imie, nazwisko: nazwisko }, pracownik)
+    }
+    async DeletePracownik(imie: string, nazwisko: string) {
+        await pracownikModel.deleteOne({ imie: imie, nazwisko: nazwisko })
+    }
+    async GetZamowienia(): Promise<Zamowienie[]> {
+        return await zamoweienieModel.find().exec()
+    }
+    async GetZamowienie(id: string): Promise<Zamowienie> {
+        return await zamoweienieModel.findOne({ _id: id }).exec()
+    }
+    async PostZamowienie(zamowienie: Zamowienie) {
+        const newZamowienie = new zamoweienieModel(zamowienie)
+        await newZamowienie.save()
+    }
+    async UpdateZamowienie(id: string, zamowienie: Zamowienie) {
+        await zamoweienieModel.findOneAndUpdate({ _id: id }, zamowienie)
+    }
+    async DeleteZamowienie(id: string){
+        await zamoweienieModel.deleteOne({_id: id})
+    }
+    async GetProdukty(): Promise<Zamowienie[]> {
+        return await zamoweienieModel.find().exec()
+    }
+    async GetProdukt(id: string): Promise<Zamowienie> {
+        return await zamoweienieModel.findOne({ _id: id }).exec()
+    }
+    async PostProdukt(zamowienie: Zamowienie) {
+        const newZamowienie = new zamoweienieModel(zamowienie)
+        await newZamowienie.save()
+    }
+    async UpdateProdukt(id: string, zamowienie: Zamowienie) {
+        await zamoweienieModel.findOneAndUpdate({ _id: id }, zamowienie)
+    }
+    async DeleteProdukt(id: string){
+        await zamoweienieModel.deleteOne({_id: id})
+    }
+
+
 }

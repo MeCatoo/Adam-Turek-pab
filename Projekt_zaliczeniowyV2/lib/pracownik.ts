@@ -1,41 +1,31 @@
 export class Pracownik {
-    private _imie: string = "TBA"
-    private _nazwisko: string = "TBA"
-    private _pozycja: Pozycja = Pozycja.brak
+    imie: string
+    nazwisko: string
+    pozycja: Pozycja = Pozycja.brak
 
-    get Imie() { return this._imie }
-    get Nazwisko() { return this._nazwisko }
-    get Pozycja() { return this._pozycja }
+    // get Imie() { return this._imie }
+    // get Nazwisko() { return this._nazwisko }
+    // get Pozycja() { return this._pozycja }
 
-    set Imie(name: string) {
-        if (name.length < 50 && name.length > 0)
-            this._imie = name
-        else
-            throw new Error("Błędna nazwa")
-    }
-    set Nazwisko(name: string) {
-        if (name.length < 50 && name.length > 0)
-            this._nazwisko = name
-        else
-            throw new Error("Błędna nazwa")
-    }
-    set Pozycja(pozycja: Pozycja) {
-        this._pozycja = pozycja
-    }
-    constructor(imie: string, nazwisko: string, pozyzja?: string) {
-        this.Imie = imie
-        this.Nazwisko = nazwisko
-        switch (pozyzja) {
-            case "kierownik":
-                this.Pozycja = Pozycja.kierownik; break;
-            case "kelner":
-                this.Pozycja = Pozycja.kierownik; break;
-            case "kucharz":
-                this.Pozycja = Pozycja.kierownik; break;
-            default:
-                this.Pozycja = Pozycja.brak; break;
-
-        }
+    // set Imie(name: string) {
+    //     if (name.length < 50 && name.length > 0)
+    //         this._imie = name
+    //     else
+    //         throw new Error("Błędna nazwa")
+    // }
+    // set Nazwisko(name: string) {
+    //     if (name.length < 50 && name.length > 0)
+    //         this._nazwisko = name
+    //     else
+    //         throw new Error("Błędna nazwa")
+    // }
+    // set Pozycja(pozycja: Pozycja) {
+    //     this._pozycja = pozycja
+    // }
+    constructor(pracownik: Pracownik) {
+        this.imie = pracownik.imie
+        this.nazwisko = pracownik.nazwisko
+        this.pozycja = Pozycja[pracownik.pozycja as keyof typeof Pozycja] ?? Pozycja.brak
     }
 }
 export enum Pozycja {

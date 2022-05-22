@@ -12,7 +12,7 @@ export class Zamowienie {
 
     constructor(dania: Danie[], stolik: Stolik, pracownik?: Pracownik) {
         let finalKwota = 0
-        dania.forEach(element => finalKwota += element.Cena)
+        dania.forEach(element => finalKwota += element.cena)
         this.pozycje = dania
         this.kwota = finalKwota
         this.stolik = stolik
@@ -39,7 +39,7 @@ export class Zamowienie {
     }
     UsunDanie(danie: Danie): boolean {
         if (this.pozycje.includes(danie)) {
-            this.pozycje = this.pozycje.splice(this.pozycje.findIndex(element => element.Nazwa = danie.Nazwa), 1)
+            this.pozycje = this.pozycje.splice(this.pozycje.findIndex(element => element.nazwa = danie.nazwa), 1)
             return true;
         }
         else { return false }
