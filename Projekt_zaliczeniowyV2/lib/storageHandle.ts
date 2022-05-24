@@ -5,7 +5,7 @@ import { Rezerwacja } from "./rezerwacja"
 import { Danie } from "./danie"
 import { Produkt } from "./produkt"
 import { Zamowienie } from "./zamowienie"
-import { stolikModel, restauracjaModel, rezerwacjaModel, danieModel, pracownikModel, zamoweienieModel } from "../configDB"
+import { stolikModel, restauracjaModel, rezerwacjaModel, danieModel, pracownikModel, zamoweienieModel, produktModel, produktZapotrzebowanieModel } from "../configDB"
 import { Mode } from "fs"
 
 export class StorageHandle {
@@ -145,25 +145,41 @@ export class StorageHandle {
     async UpdateZamowienie(id: string, zamowienie: Zamowienie) {
         await zamoweienieModel.findOneAndUpdate({ _id: id }, zamowienie)
     }
-    async DeleteZamowienie(id: string){
-        await zamoweienieModel.deleteOne({_id: id})
+    async DeleteZamowienie(id: string) {
+        await zamoweienieModel.deleteOne({ _id: id })
     }
-    async GetProdukty(): Promise<Zamowienie[]> {
-        return await zamoweienieModel.find().exec()
+    async GetProdukty(): Promise<Produkt[]> {
+        return await produktModel.find().exec()
     }
-    async GetProdukt(id: string): Promise<Zamowienie> {
-        return await zamoweienieModel.findOne({ _id: id }).exec()
+    async GetProdukt(nazwa: string): Promise<Produkt> {
+        return await produktModel.findOne({ nazwa: nazwa }).exec()
     }
-    async PostProdukt(zamowienie: Zamowienie) {
-        const newZamowienie = new zamoweienieModel(zamowienie)
-        await newZamowienie.save()
+    async PostProdukt(produkt: Produkt) {
+        const newProdukt = new produktModel(produkt)
+        await newProdukt.save()
     }
-    async UpdateProdukt(id: string, zamowienie: Zamowienie) {
-        await zamoweienieModel.findOneAndUpdate({ _id: id }, zamowienie)
+    async UpdateProdukt(nazwa: string, produkt: Produkt) {
+        await produktModel.findOneAndUpdate({ nazwa: nazwa }, produkt)
     }
-    async DeleteProdukt(id: string){
-        await zamoweienieModel.deleteOne({_id: id})
+    async DeleteProdukt(nazwa: string) {
+        await produktZapotrzebowanieModel.deleteOne({ nazwa: nazwa })
     }
-
+    async GetProduktyZapotrzebowanie(): Promise<Produkt[]> {
+        return await produktZapotrzebowanieModel.find().exec()
+    }
+    async GetProduktZapotrzebowanie(nazwa: string): Promise<Produkt> {
+        return await produktZapotrzebowanieModel.findOne({ nazwa: nazwa }).exec()
+    }
+    async PostProduktZapotrzebowanie(produkt: Produkt) {
+        const newProdukt = new produktZapotrzebowanieModel(produkt)
+        await newProdukt.save()
+    }
+    async UpdateProduktZapotrzebowanie(nazwa: string, produkt: Produkt) {
+        await produktZapotrzebowanieModel.findOneAndUpdate({ nazwa: nazwa }, produkt)
+    }
+    async DeleteProduktZapotrzebowanie(nazwa: string) {
+        await produktZapotrzebowanieModel.deleteOne({ nazwa: nazwa })
+    }
+    //to do: 
 
 }

@@ -8,6 +8,7 @@ import express from 'express'
 import { Request, Response } from 'express'
 import { StorageHandle } from "./lib/storageHandle"
 import { Console } from "console";
+import { JednostkaMiary, Produkt } from "./lib/produkt";
 
 // console.log(new Restauracja("Nazwa", "Zacny adres"))
 // console.log(new Pracownik("Imie", "Nazwisko"))
@@ -108,7 +109,8 @@ app.get('/danie/:nazwa', (async function (req: Request, res: Response) {
 }))
 app.post('/danie/:nazwa', (async function (req: Request, res: Response) {
     if (!req.body.nazwa || !req.body.cena || !req.body.kategoria)
-        res.status(200).send(await storageHandle.PostDanie(new Danie({ nazwa: req.body.nazwa, cena: req.body.cena, kategoria: Kategoria[req.body.kategoria as keyof typeof Kategoria] ?? Kategoria.danie_główne })))
+        return res.status(400).send("Podaj nazwę, cenę i kategorię")
+    res.status(200).send(await storageHandle.PostDanie(new Danie({ nazwa: req.body.nazwa, cena: req.body.cena, kategoria: Kategoria[req.body.kategoria as keyof typeof Kategoria] ?? Kategoria.danie_główne })))
 }))
 app.put('/danie/:nazwa', (async function (req: Request, res: Response) {
     res.status(200).send(await storageHandle.GetDanie(req.params.nazwa))
@@ -117,7 +119,82 @@ app.delete('/danie/:id', async function (req: Request, res: Response) {
     await storageHandle.DeleteDanie(req.params.id)
     res.status(200).send("Usunięto")
 })
+app.get('/magazyn', (async function (req: Request, res: Response) {
+    res.status(200).send(await (await storageHandle.GetProdukty()).slice(0,10))
+}))
+app.get('/magazyn/strona/:numer', (async function (req: Request, res: Response) {
+    res.status(200).send(await (await storageHandle.GetProdukty()).slice(10*(+req.params.numer),10*(+req.params.numer)+10))
+}))
+app.get('/magazyn/:nazwa', (async function (req: Request, res: Response) {
+    res.status(200).send(await storageHandle.GetProdukt(req.params.nazwa))
+}))
+app.get('/magazyn/sortowanie/:nazwa', (async function (req: Request, res: Response) {
+    
+    const magazyn = await storageHandle.GetProdukty()
+    const wynik = magazyn.filter(element => element.nazwa == req.params.nazwa)
+    res.status(200).send(wynik)
+}))
+app.post('/magazyn/', (async function (req: Request, res: Response) {
+    if (!req.body.nazwa || !req.body.cena || !req.body.ilosc || !req.body.jednostkaMiary)
+        return res.status(400).send("Podaj prawidłowe dane")
+    const zapotrzebowanie = await storageHandle.GetProduktyZapotrzebowanie()
+    let produkt = new Produkt({ nazwa: req.body.nazwa, cena: req.body.cena, ilosc: req.body.ilosc, jednostkaMiary: JednostkaMiary[req.body.jednostkaMiary as keyof typeof JednostkaMiary] ?? JednostkaMiary.sztuki })
+    if (zapotrzebowanie.includes(produkt)) {
+        let nowyProdukt = await storageHandle.GetProduktZapotrzebowanie(zapotrzebowanie.find(element => element.nazwa == produkt.nazwa).nazwa)
+        if (nowyProdukt.ilosc - produkt.ilosc < 0) {
+            storageHandle.DeleteProduktZapotrzebowanie(nowyProdukt.nazwa)
+            storageHandle.PostProdukt(produkt);
+        }
+        else {
+            nowyProdukt.ilosc = nowyProdukt.ilosc - produkt.ilosc
+            storageHandle.UpdateProduktZapotrzebowanie(nowyProdukt.nazwa, nowyProdukt)
+            storageHandle.PostProdukt(produkt)
+        }
 
+    }
+    res.status(200).send(await storageHandle.PostProdukt(produkt))
+}))
+app.put('/magazyn/:nazwa', (async function (req: Request, res: Response) {
+    if (!req.body.ilosc)
+        return res.status(400).send("Można zmieniać tylko ilość produktu")
+    let toEdit = await storageHandle.GetProdukt(req.params.nazwa)
+    if (!toEdit)
+        return res.status(404).send("Nie znaleziono")
+    const zapotrzebowanie = await storageHandle.GetProduktyZapotrzebowanie()
+    let ioscProdukt = req.body.ilosc
+    let zapotrzebowanieProdukt = await storageHandle.GetProduktZapotrzebowanie(zapotrzebowanie.find(element => element.nazwa == req.params.nazwa).nazwa)
+    if (zapotrzebowanieProdukt) {
+        if (zapotrzebowanieProdukt.ilosc - ioscProdukt < 0) {
+            storageHandle.DeleteProduktZapotrzebowanie(zapotrzebowanieProdukt.nazwa)
+            toEdit.ilosc = toEdit.ilosc + req.body.ilosc
+            storageHandle.UpdateProdukt(req.params.nazwa, toEdit);
+        }
+        else {
+            zapotrzebowanieProdukt.ilosc = zapotrzebowanieProdukt.ilosc - req.body.ilosc
+            toEdit.ilosc = toEdit.ilosc + req.body.ilosc
+            storageHandle.UpdateProduktZapotrzebowanie(zapotrzebowanieProdukt.nazwa, zapotrzebowanieProdukt)
+            storageHandle.UpdateProdukt(toEdit.nazwa, toEdit)
+        }
+
+    }
+    else { 
+        toEdit.ilosc = toEdit.ilosc + req.body.ilosc
+        res.status(200).send(await storageHandle.UpdateProdukt(toEdit.nazwa,toEdit)) 
+    }
+}))
+app.delete('/magazyn/:nazwa', (async function (req: Request, res: Response) {
+    await storageHandle.DeleteProdukt(req.params.nazwa)
+    res.status(200).send("Usunięto")
+}))
+app.get('/zapotrzebowanie', (async function (req: Request, res: Response) {
+    res.status(200).send(await (await storageHandle.GetProduktyZapotrzebowanie()).slice(0,10))
+}))
+app.get('/zapotrzebowanie/strona/:numer', (async function (req: Request, res: Response) {
+    res.status(200).send(await (await storageHandle.GetProduktyZapotrzebowanie()).slice(10*(+req.params.numer),10*(+req.params.numer)+10))
+}))
+app.get('/zapotrzebowanie/:nazwa', (async function (req: Request, res: Response) {
+    res.status(200).send(await storageHandle.GetProduktZapotrzebowanie(req.params.nazwa))
+}))
 // DodajRezerwacje(start: Date, end: Date, iloscOsob: number) {
 //     let inneRezerwacje = this._rezerwacje.filter(rezerwacja => (start <= rezerwacja.Start && rezerwacja.Start<end) || (end >= rezerwacja.Koniec && rezerwacja.Koniec>start)) //inne rezerwacje w tym terminie
 //     let wolneStoliki = this._stoliki.filter(element => !inneRezerwacje.some(rezerwacja => rezerwacja.Stolik == element )) //wybieranie nie zajętego stolika w tym okresie czasu

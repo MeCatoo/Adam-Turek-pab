@@ -166,6 +166,25 @@ const produktScema = new mongoose.Schema({
     }
 })
 export const produktModel = mongoose.model("produkt", produktScema)
+const produktZapotrzebowanieScema = new mongoose.Schema({
+    nazwa: {
+        type: String,
+        required: true
+    },
+    cena: {
+        type: Number,
+        required: true
+    },
+    ilosc: {
+        type: Number,
+        required: true
+    },
+    jednostkaMiary: {
+        type: String,
+        required: true
+    }
+})
+export const produktZapotrzebowanieModel = mongoose.model("produktZapotrzebowanie", produktZapotrzebowanieScema)
 // const newRezerwacja = new rezerwacjaModel({stolik: newstolika, 
 //     start: new Date(Date.now()),
 //     koniec: new Date(Date.now()+1000),
