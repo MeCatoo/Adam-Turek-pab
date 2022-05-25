@@ -155,8 +155,14 @@ export class StorageHandle {
         return await produktModel.findOne({ nazwa: nazwa }).exec()
     }
     async PostProdukt(produkt: Produkt) {
-        const newProdukt = new produktModel(produkt)
-        await newProdukt.save()
+        const produktCheck = await this.GetProdukt(produkt.nazwa)
+        if(produktCheck && produkt.cena == produktCheck.cena && produktCheck.jednostkaMiary == produkt.jednostkaMiary){
+            produkt.ilosc = +produkt.ilosc + +produktCheck.ilosc
+            await this.UpdateProdukt(produkt.nazwa,produkt)
+        }
+        else
+        {const newProdukt = new produktModel(produkt)
+        await newProdukt.save()}
     }
     async UpdateProdukt(nazwa: string, produkt: Produkt) {
         await produktModel.findOneAndUpdate({ nazwa: nazwa }, produkt)
@@ -171,8 +177,14 @@ export class StorageHandle {
         return await produktZapotrzebowanieModel.findOne({ nazwa: nazwa }).exec()
     }
     async PostProduktZapotrzebowanie(produkt: Produkt) {
-        const newProdukt = new produktZapotrzebowanieModel(produkt)
-        await newProdukt.save()
+        const produktCheck = await this.GetProduktZapotrzebowanie(produkt.nazwa)
+        if(produktCheck && produkt.cena == produktCheck.cena && produktCheck.jednostkaMiary == produkt.jednostkaMiary){
+            produkt.ilosc = +produkt.ilosc + +produktCheck.ilosc
+            await this.UpdateProduktZapotrzebowanie(produkt.nazwa,produkt)
+        }
+        else
+        {const newProdukt = new produktZapotrzebowanieModel(produkt)
+        await newProdukt.save()}
     }
     async UpdateProduktZapotrzebowanie(nazwa: string, produkt: Produkt) {
         await produktZapotrzebowanieModel.findOneAndUpdate({ nazwa: nazwa }, produkt)
