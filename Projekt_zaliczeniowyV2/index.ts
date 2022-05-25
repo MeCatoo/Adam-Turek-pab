@@ -120,16 +120,16 @@ app.delete('/danie/:id', async function (req: Request, res: Response) {
     res.status(200).send("Usunięto")
 })
 app.get('/magazyn', (async function (req: Request, res: Response) {
-    res.status(200).send(await (await storageHandle.GetProdukty()).slice(0,10))
+    res.status(200).send(await (await storageHandle.GetProdukty()).slice(0, 10))
 }))
 app.get('/magazyn/strona/:numer', (async function (req: Request, res: Response) {
-    res.status(200).send(await (await storageHandle.GetProdukty()).slice(10*(+req.params.numer),10*(+req.params.numer)+10))
+    res.status(200).send(await (await storageHandle.GetProdukty()).slice(10 * (+req.params.numer), 10 * (+req.params.numer) + 10))
 }))
 app.get('/magazyn/:nazwa', (async function (req: Request, res: Response) {
     res.status(200).send(await storageHandle.GetProdukt(req.params.nazwa))
 }))
 app.get('/magazyn/sortowanie/:nazwa', (async function (req: Request, res: Response) {
-    
+
     const magazyn = await storageHandle.GetProdukty()
     const wynik = magazyn.filter(element => element.nazwa == req.params.nazwa)
     res.status(200).send(wynik)
@@ -137,22 +137,25 @@ app.get('/magazyn/sortowanie/:nazwa', (async function (req: Request, res: Respon
 app.post('/magazyn/', (async function (req: Request, res: Response) {
     if (!req.body.nazwa || !req.body.cena || !req.body.ilosc || !req.body.jednostkaMiary)
         return res.status(400).send("Podaj prawidłowe dane")
-    const zapotrzebowanie = await storageHandle.GetProduktyZapotrzebowanie()
+    const zapotrzebowanieLista = await storageHandle.GetProduktyZapotrzebowanie()
     let produkt = new Produkt({ nazwa: req.body.nazwa, cena: req.body.cena, ilosc: req.body.ilosc, jednostkaMiary: JednostkaMiary[req.body.jednostkaMiary as keyof typeof JednostkaMiary] ?? JednostkaMiary.sztuki })
-    if (zapotrzebowanie.includes(produkt)) {
-        let nowyProdukt = await storageHandle.GetProduktZapotrzebowanie(zapotrzebowanie.find(element => element.nazwa == produkt.nazwa).nazwa)
-        if (nowyProdukt.ilosc - produkt.ilosc < 0) {
-            storageHandle.DeleteProduktZapotrzebowanie(nowyProdukt.nazwa)
-            storageHandle.PostProdukt(produkt);
+    const zapotrzebowanie1 = zapotrzebowanieLista.find(element => element.nazwa == produkt.nazwa)
+    //if(!zapotrzebowanie1)
+    if (zapotrzebowanie1) {
+        let Zapotrzebowanie = await storageHandle.GetProduktZapotrzebowanie(zapotrzebowanie1.nazwa)
+        if (Zapotrzebowanie.ilosc - produkt.ilosc < 0) {
+            await storageHandle.DeleteProduktZapotrzebowanie(Zapotrzebowanie.nazwa)
+            await storageHandle.PostProdukt(produkt);
         }
         else {
-            nowyProdukt.ilosc = nowyProdukt.ilosc - produkt.ilosc
-            storageHandle.UpdateProduktZapotrzebowanie(nowyProdukt.nazwa, nowyProdukt)
-            storageHandle.PostProdukt(produkt)
+            Zapotrzebowanie.ilosc = Zapotrzebowanie.ilosc - produkt.ilosc
+            await storageHandle.UpdateProduktZapotrzebowanie(Zapotrzebowanie.nazwa, Zapotrzebowanie)
+            await storageHandle.PostProdukt(produkt)
         }
-
+        res.status(200).send(produkt)
     }
-    res.status(200).send(await storageHandle.PostProdukt(produkt))
+    await storageHandle.PostProdukt(produkt)
+    res.status(200).send(produkt)
 }))
 app.put('/magazyn/:nazwa', (async function (req: Request, res: Response) {
     if (!req.body.ilosc)
@@ -162,24 +165,26 @@ app.put('/magazyn/:nazwa', (async function (req: Request, res: Response) {
         return res.status(404).send("Nie znaleziono")
     const zapotrzebowanie = await storageHandle.GetProduktyZapotrzebowanie()
     let ioscProdukt = req.body.ilosc
-    let zapotrzebowanieProdukt = await storageHandle.GetProduktZapotrzebowanie(zapotrzebowanie.find(element => element.nazwa == req.params.nazwa).nazwa)
-    if (zapotrzebowanieProdukt) {
-        if (zapotrzebowanieProdukt.ilosc - ioscProdukt < 0) {
-            storageHandle.DeleteProduktZapotrzebowanie(zapotrzebowanieProdukt.nazwa)
-            toEdit.ilosc = toEdit.ilosc + req.body.ilosc
-            storageHandle.UpdateProdukt(req.params.nazwa, toEdit);
+    const ZapotrzebowanieCheck = zapotrzebowanie.find(element => element.nazwa == req.params.nazwa)
+    if (ZapotrzebowanieCheck) {
+        let zapotrzebowanieProdukt = await storageHandle.GetProduktZapotrzebowanie(ZapotrzebowanieCheck.nazwa)
+        if (+zapotrzebowanieProdukt.ilosc - +ioscProdukt < 0) {
+            await storageHandle.DeleteProduktZapotrzebowanie(zapotrzebowanieProdukt.nazwa)
+            toEdit.ilosc = +toEdit.ilosc + +req.body.ilosc
+            await storageHandle.UpdateProdukt(req.params.nazwa, toEdit);
         }
         else {
-            zapotrzebowanieProdukt.ilosc = zapotrzebowanieProdukt.ilosc - req.body.ilosc
-            toEdit.ilosc = toEdit.ilosc + req.body.ilosc
-            storageHandle.UpdateProduktZapotrzebowanie(zapotrzebowanieProdukt.nazwa, zapotrzebowanieProdukt)
-            storageHandle.UpdateProdukt(toEdit.nazwa, toEdit)
+            zapotrzebowanieProdukt.ilosc = +zapotrzebowanieProdukt.ilosc - +req.body.ilosc
+            toEdit.ilosc = +toEdit.ilosc + +req.body.ilosc
+            await storageHandle.UpdateProduktZapotrzebowanie(zapotrzebowanieProdukt.nazwa, zapotrzebowanieProdukt)
+            await storageHandle.UpdateProdukt(toEdit.nazwa, toEdit)
         }
-
+        res.status(200).send(toEdit)
     }
-    else { 
-        toEdit.ilosc = toEdit.ilosc + req.body.ilosc
-        res.status(200).send(await storageHandle.UpdateProdukt(toEdit.nazwa,toEdit)) 
+    else {
+        toEdit.ilosc = +toEdit.ilosc + +req.body.ilosc
+        await storageHandle.UpdateProdukt(toEdit.nazwa, toEdit)
+        res.status(200).send(toEdit)
     }
 }))
 app.delete('/magazyn/:nazwa', (async function (req: Request, res: Response) {
@@ -187,13 +192,40 @@ app.delete('/magazyn/:nazwa', (async function (req: Request, res: Response) {
     res.status(200).send("Usunięto")
 }))
 app.get('/zapotrzebowanie', (async function (req: Request, res: Response) {
-    res.status(200).send(await (await storageHandle.GetProduktyZapotrzebowanie()).slice(0,10))
+    res.status(200).send(await (await storageHandle.GetProduktyZapotrzebowanie()).slice(0, 10))
 }))
 app.get('/zapotrzebowanie/strona/:numer', (async function (req: Request, res: Response) {
-    res.status(200).send(await (await storageHandle.GetProduktyZapotrzebowanie()).slice(10*(+req.params.numer),10*(+req.params.numer)+10))
+    res.status(200).send(await (await storageHandle.GetProduktyZapotrzebowanie()).slice(10 * (+req.params.numer), 10 * (+req.params.numer) + 10))
 }))
 app.get('/zapotrzebowanie/:nazwa', (async function (req: Request, res: Response) {
     res.status(200).send(await storageHandle.GetProduktZapotrzebowanie(req.params.nazwa))
+}))
+app.post('/zapotrzebowanie', (async function (req: Request, res: Response) {
+    if (!req.body.nazwa || !req.body.cena || !req.body.ilosc || !req.body.jednostkaMiary)
+        return res.status(400).send("Podaj prawidłowe dane")
+    let produkt = new Produkt({ nazwa: req.body.nazwa, cena: req.body.cena, ilosc: req.body.ilosc, jednostkaMiary: JednostkaMiary[req.body.jednostkaMiary as keyof typeof JednostkaMiary] ?? JednostkaMiary.sztuki })
+    await storageHandle.PostProduktZapotrzebowanie(produkt)
+    res.status(200).send(produkt)
+}))
+app.put('/zapotrzebowanie/:nazwa', (async function (req: Request, res: Response) {
+    if (!req.body.ilosc)
+        return res.status(400).send("Można zmieniać tylko ilość produktu")
+    let zapotrzebowanieTmp = await storageHandle.GetProduktZapotrzebowanie(req.params.nazwa)
+    if (zapotrzebowanieTmp) {
+        zapotrzebowanieTmp.ilosc = +zapotrzebowanieTmp + +req.params.ilosc
+        await storageHandle.UpdateProdukt(req.params.nazwa, zapotrzebowanieTmp)
+        res.status(200).send(zapotrzebowanieTmp)
+    }
+    else{
+        res.status(404).send("Nie odnaleziono")
+    }
+}))
+app.delete('/zapotrzebowanie/:nazwa', (async function (req: Request, res: Response) {
+    await storageHandle.DeleteProduktZapotrzebowanie(req.params.nazwa)
+    res.status(200).send("Usunięto")
+}))
+app.post('/zamowienie', (async function (req: Request, res: Response) {
+
 }))
 // DodajRezerwacje(start: Date, end: Date, iloscOsob: number) {
 //     let inneRezerwacje = this._rezerwacje.filter(rezerwacja => (start <= rezerwacja.Start && rezerwacja.Start<end) || (end >= rezerwacja.Koniec && rezerwacja.Koniec>start)) //inne rezerwacje w tym terminie
