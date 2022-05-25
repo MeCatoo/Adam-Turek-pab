@@ -9,6 +9,7 @@ import { Request, Response } from 'express'
 import { StorageHandle } from "./lib/storageHandle"
 import { Console } from "console";
 import { JednostkaMiary, Produkt } from "./lib/produkt";
+import jwt from 'jsonwebtoken'
 
 // console.log(new Restauracja("Nazwa", "Zacny adres"))
 // console.log(new Pracownik("Imie", "Nazwisko"))
@@ -224,9 +225,18 @@ app.delete('/zapotrzebowanie/:nazwa', (async function (req: Request, res: Respon
     await storageHandle.DeleteProduktZapotrzebowanie(req.params.nazwa)
     res.status(200).send("Usunięto")
 }))
-app.post('/zamowienie', (async function (req: Request, res: Response) {
-
+app.get('/pracownicy', (async function (req: Request, res: Response) {
+    res.status(200).send(await storageHandle.GetPracownicy())
 }))
+app.get('/pracownik/:id', (async function (req: Request, res: Response){
+    const pracownikCheck = storageHandle.GetPracownik({})
+    // to do: poprawa get pracownik, mogą być o tych samych danych
+    //const token = jwt.sign(payload, secret)
+}))
+
+//to do: tokeny dla każdego pracownika, dzięki którym przypisują się do zamówienia
+//to do: sortowanie po nazwie: rosnąco i malejąco
+
 // DodajRezerwacje(start: Date, end: Date, iloscOsob: number) {
 //     let inneRezerwacje = this._rezerwacje.filter(rezerwacja => (start <= rezerwacja.Start && rezerwacja.Start<end) || (end >= rezerwacja.Koniec && rezerwacja.Koniec>start)) //inne rezerwacje w tym terminie
 //     let wolneStoliki = this._stoliki.filter(element => !inneRezerwacje.some(rezerwacja => rezerwacja.Stolik == element )) //wybieranie nie zajętego stolika w tym okresie czasu
@@ -299,16 +309,16 @@ app.post('/zamowienie', (async function (req: Request, res: Response) {
 //     else
 //         res.status(404).send("Nie odnalezniono stolika")
 // }))
-app.get('/menu', (function (req: Request, res: Response) {
-    res.status(200).send(storageHandle.menu)
-}))
-app.get('/menu/:nazwa', (function (req: Request, res: Response) {
-    const danie = storageHandle.menu.find(element => element.nazwa = req.params.nazwa)
-    if (danie)
-        return res.status(200).send(danie)
-    else
-        return res.status(404).send("Nie odnaleziono danie")
-}))
+// app.get('/menu', (function (req: Request, res: Response) {
+//     res.status(200).send(storageHandle.menu)
+// }))
+// app.get('/menu/:nazwa', (function (req: Request, res: Response) {
+//     const danie = storageHandle.menu.find(element => element.nazwa = req.params.nazwa)
+//     if (danie)
+//         return res.status(200).send(danie)
+//     else
+//         return res.status(404).send("Nie odnaleziono danie")
+// }))
 // app.post('/menu', function (req: Request, res: Response) {
 //     let danie: Danie;
 //     if (req.body.nazwa && req.body.cena && req.body.kategoria) {
