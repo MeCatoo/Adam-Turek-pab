@@ -8,7 +8,7 @@ export class Zamowienie {
     status: Status = Status.zlozone
     stolik: Stolik
     kwota: number
-    readonly DataZamowineia: Date
+    DataZamowienia: Date
 
     constructor(dania: Danie[], stolik: Stolik, pracownik?: Pracownik, kwota?: number) {
         let finalKwota = 0
@@ -17,7 +17,7 @@ export class Zamowienie {
         this.kwota = kwota??finalKwota
         this.stolik = stolik
         this.pracownik = <Pracownik>pracownik
-        this.DataZamowineia = new Date(Date.now())
+        this.DataZamowienia = new Date(Date.now())
     }
     NextStatus() {
         if (this.status == Status.rachunek)

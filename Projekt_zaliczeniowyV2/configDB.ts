@@ -119,20 +119,20 @@ export const pracownikModel = mongoose.model("pracownik", pracownikScema)
 const zamoweienieScema = new mongoose.Schema({
     pracownik: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'pracownikScema',
+        ref: 'pracownik',
         required: true
     },
     stolik: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'stolikkScema',
+        ref: 'stolik',
         required: true
     },
     pozycje: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'stolikkScema',
+        ref: 'danie',
         required: true
     }],
-    cena: {
+    kwota: {
         type: Number,
         required: true
     },
@@ -140,7 +140,7 @@ const zamoweienieScema = new mongoose.Schema({
         type: String,
         required: true
     },
-    dataZamoiwenia: {
+    DataZamowienia: {
         type: Date,
         required: true
     }

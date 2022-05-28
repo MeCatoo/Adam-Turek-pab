@@ -60,11 +60,11 @@ export class StorageHandle {
         const save = await stolikModel.find({}).exec()
         console.log(save)
         save.forEach((element: Stolik) => tmp.push(new Stolik(element)));
-        return tmp
+        return save
     }
     async GetStolik(nazwa: string): Promise<Stolik> {
         const data = await stolikModel.findOne({ nazwa: nazwa }).exec()
-        return new Stolik(data)
+        return data
     }
     async PostStolik(stolik: Stolik) {
         const newStolik = await new stolikModel(stolik)
@@ -102,12 +102,12 @@ export class StorageHandle {
     }
     async GetMenu(): Promise<Danie[]> {
         let tmp: Danie[] = []
-        const newDanie = await new danieModel.find().exec()
+        const newDanie = await danieModel.find().exec()
         newDanie.forEach((element: Danie) => tmp.push(new Danie(element)))
         return tmp
     }
     async GetDanie(nazwa: string): Promise<Danie> {
-        const newDanie = await new danieModel.findOne({ nazwa: nazwa }).exec()
+        const newDanie = await danieModel.findOne({ nazwa: nazwa }).exec()
         return new Danie(newDanie)
     }
     async PostDanie(danie: Danie) {
@@ -124,23 +124,24 @@ export class StorageHandle {
         return await pracownikModel.find().exec()
     }
     async GetPracownik(id: string): Promise<Pracownik> {
-        return await pracownikModel.findOne({ _id:id }).exec()
+        return await pracownikModel.findOne({ _id: id }).exec()
     }
     async PostPracownik(pracownik: Pracownik) {
-        const newPracownik = pracownikModel(pracownik)
+        const newPracownik = new pracownikModel(pracownik)
         await newPracownik.save()
     }
     async UpdatePracownik(id: string, pracownik: Pracownik) {
-        await pracownikModel.findOneAndUpdate({  _id:id  }, pracownik)
+        await pracownikModel.findOneAndUpdate({ _id: id }, pracownik)
     }
     async DeletePracownik(id: string) {
-        await pracownikModel.deleteOne({  _id:id  })
+        await pracownikModel.deleteOne({ _id: id })
     }
     async GetZamowienia(): Promise<Zamowienie[]> {
-        return await zamoweienieModel.find().exec()
+        let zawmowienia: any[] = await zamoweienieModel.find().populate('pracownik stolik pozycje').exec()
+        return zawmowienia
     }
     async GetZamowienie(id: string): Promise<Zamowienie> {
-        return await zamoweienieModel.findOne({ _id: id }).exec()
+        return await zamoweienieModel.findOne({ _id: id }).populate('pracownik stolik pozycje').exec()
     }
     async PostZamowienie(zamowienie: Zamowienie) {
         const newZamowienie = new zamoweienieModel(zamowienie)
@@ -160,13 +161,14 @@ export class StorageHandle {
     }
     async PostProdukt(produkt: Produkt) {
         const produktCheck = await this.GetProdukt(produkt.nazwa)
-        if(produktCheck && produkt.cena == produktCheck.cena && produktCheck.jednostkaMiary == produkt.jednostkaMiary){
+        if (produktCheck && produkt.cena == produktCheck.cena && produktCheck.jednostkaMiary == produkt.jednostkaMiary) {
             produkt.ilosc = +produkt.ilosc + +produktCheck.ilosc
-            await this.UpdateProdukt(produkt.nazwa,produkt)
+            await this.UpdateProdukt(produkt.nazwa, produkt)
         }
-        else
-        {const newProdukt = new produktModel(produkt)
-        await newProdukt.save()}
+        else {
+            const newProdukt = new produktModel(produkt)
+            await newProdukt.save()
+        }
     }
     async UpdateProdukt(nazwa: string, produkt: Produkt) {
         await produktModel.findOneAndUpdate({ nazwa: nazwa }, produkt)
@@ -182,13 +184,14 @@ export class StorageHandle {
     }
     async PostProduktZapotrzebowanie(produkt: Produkt) {
         const produktCheck = await this.GetProduktZapotrzebowanie(produkt.nazwa)
-        if(produktCheck && produkt.cena == produktCheck.cena && produktCheck.jednostkaMiary == produkt.jednostkaMiary){
+        if (produktCheck && produkt.cena == produktCheck.cena && produktCheck.jednostkaMiary == produkt.jednostkaMiary) {
             produkt.ilosc = +produkt.ilosc + +produktCheck.ilosc
-            await this.UpdateProduktZapotrzebowanie(produkt.nazwa,produkt)
+            await this.UpdateProduktZapotrzebowanie(produkt.nazwa, produkt)
         }
-        else
-        {const newProdukt = new produktZapotrzebowanieModel(produkt)
-        await newProdukt.save()}
+        else {
+            const newProdukt = new produktZapotrzebowanieModel(produkt)
+            await newProdukt.save()
+        }
     }
     async UpdateProduktZapotrzebowanie(nazwa: string, produkt: Produkt) {
         await produktZapotrzebowanieModel.findOneAndUpdate({ nazwa: nazwa }, produkt)

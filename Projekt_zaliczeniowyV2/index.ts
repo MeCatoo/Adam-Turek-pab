@@ -143,7 +143,8 @@ app.get('/danie/:nazwa', (async function (req: Request, res: Response) {
 app.post('/danie', (async function (req: Request, res: Response) {
     if (!req.body.nazwa || !req.body.cena || !req.body.kategoria)
         return res.status(400).send("Podaj nazwę, cenę i kategorię")
-    res.status(200).send(await storageHandle.PostDanie(new Danie({ nazwa: req.body.nazwa, cena: req.body.cena, kategoria: Kategoria[req.body.kategoria as keyof typeof Kategoria] ?? Kategoria.danie_główne })))
+    const danie = await storageHandle.PostDanie(new Danie({ nazwa: req.body.nazwa, cena: req.body.cena, kategoria: Kategoria[req.body.kategoria as keyof typeof Kategoria] ?? Kategoria.danie_główne }))
+    res.status(200).send(danie)
 }))
 app.put('/danie/:nazwa', (async function (req: Request, res: Response) {
     const danie = storageHandle.GetDanie(req.params.nazwa)
@@ -176,7 +177,7 @@ app.get('/magazyn', (async function (req: Request, res: Response) {
         res.status(200).send(produkty.slice(0, 10))
     }
 }))
-app.get('/magazyn/strona/:numer', (async function (req: Request, res: Response) {
+app.post('/magazyn/strona/:numer', (async function (req: Request, res: Response) {
     const produkty = await storageHandle.GetProdukty()
     let sorted: Produkt[] = []
     if (req.body.orderBy) {
@@ -280,7 +281,7 @@ app.get('/zapotrzebowanie', (async function (req: Request, res: Response) {
         res.status(200).send(produkty.slice(10 * (+req.params.numer), 10 * (+req.params.numer) + 10))
     }
 }))
-app.get('/zapotrzebowanie/strona/:numer', (async function (req: Request, res: Response) {
+app.post('/zapotrzebowanie/strona/:numer', (async function (req: Request, res: Response) {
     const produkty = await storageHandle.GetProduktyZapotrzebowanie()
     let sorted: Produkt[] = []
     if (req.body.orderBy) {
@@ -376,18 +377,25 @@ app.post('/zamowienie', async function (req: Request, res: Response) {
         return res.status(404).send("Błędny login")
     if (!req.body.stolik)
         return res.status(400).send("Podaj stolik")
-    const stolik = await storageHandle.GetStolik(req.body.stolik)
+    const stolik: any = await storageHandle.GetStolik(req.body.stolik)
     if (!stolik)
         return res.status(404).send("Nie odnaleziono stolika")
     let foundDania: Danie[] = []
-    if (req.body.pozycje)
-        req.body.pozycje.forEach(async (danie: string) => {
-            const tmpDanie = await storageHandle.GetDanie(danie)
-            if (tmpDanie)
+    //console.log(await storageHandle.GetDanie("rosol"))
+   if (req.body.pozycje) {
+        for (const nazwaDania of req.body.pozycje) {
+            const tmpDanie = await storageHandle.GetDanie(nazwaDania)
+            if (tmpDanie.nazwa != undefined)
                 foundDania.push(tmpDanie)
-        })
-    const zamowienie = new Zamowienie(foundDania, stolik, pracownik, req.body.kwota)
+        }
+    }
+    console.log(foundDania)
+    if (foundDania.length != req.body.pozycje.length)
+        return res.status(400).send("Nie odnaleziono dania")
+    const zamowienie = new Zamowienie(foundDania, stolik._id, pracownik, req.body.kwota)
+    //console.log(zamowienie)
     await storageHandle.PostZamowienie(zamowienie)
+    res.status(200).send(zamowienie)
 })
 app.get('/zamowienia', async function (req: Request, res: Response) {
     res.status(200).send(await storageHandle.GetZamowienia())
@@ -428,7 +436,7 @@ app.put('/zamowienie/usun/danie/:id', async function (req: Request, res: Respons
     await storageHandle.UpdateZamowienie(zamowienie._id, zamowienie)
     res.status(200).send(zamowienie)
 })
-app.put('zamowienie/nastepy/status', async function (req: Request, res: Response) {
+app.put('/zamowienie/nastepy/status', async function (req: Request, res: Response) {
     const zamowienie: any = await storageHandle.GetZamowienie(req.params.id)
     if (!zamowienie)
         return res.status(404).send("Nie odnaleziono")
@@ -441,53 +449,56 @@ app.delete('/zamowienie/:id', async function (req: Request, res: Response) {
     await storageHandle.DeleteZamowienie(req.params.id)
     res.status(200).send("Usunięto")
 })
-app.get('raport/zamowienia/kelner/:id', async function (req: Request, res: Response) {
+app.get('/raport/zamowienia/kelner/:id', async function (req: Request, res: Response) {
     const pracownik = await storageHandle.GetPracownik(req.params.id)
     if (!pracownik)
         return res.status(404).send("Nie odnaleziono")
     const zamowienia = await storageHandle.GetZamowienia()
-    const raport = zamowienia.filter(element => element.pracownik == pracownik)
+    const raport = zamowienia.filter(element => element.pracownik.imie == pracownik.imie && element.pracownik.nazwisko == pracownik.nazwisko) 
     res.status(200).send(raport)
 })
-app.get('raport/zamowienia/kelner/suma/:id', async function (req: Request, res: Response) {
+app.get('/raport/zamowienia/kelner/suma/:id', async function (req: Request, res: Response) {
     const pracownik = await storageHandle.GetPracownik(req.params.id)
     if (!pracownik)
         return res.status(404).send("Nie odnaleziono")
     const zamowienia = await storageHandle.GetZamowienia()
-    const raport = zamowienia.filter(element => element.pracownik == pracownik)
+    const raport = zamowienia.filter(element => element.pracownik.imie == pracownik.imie && element.pracownik.nazwisko == pracownik.nazwisko)
     res.status(200).send(raport.length)
 })
-app.get('raport/zamowienia/stolik/:nazwa', async function (req: Request, res: Response) {
+app.get('/raport/zamowienia/stolik/:nazwa', async function (req: Request, res: Response) {
+    const stolik = await storageHandle.GetStolik(req.params.nazwa)
+    //console.log(stolik)
+    if (!stolik)
+        return res.status(404).send("Nie odnaleziono")
+    const zamowienia = await storageHandle.GetZamowienia()
+    //console.log(zamowienia)
+    const raport = zamowienia.filter(element => element.stolik.nazwa == stolik.nazwa)
+    res.status(200).send(raport)
+})
+app.get('/raport/zamowienia/stolik/suma/:nazwa', async function (req: Request, res: Response) {
     const stolik = await storageHandle.GetStolik(req.params.nazwa)
     if (!stolik)
         return res.status(404).send("Nie odnaleziono")
     const zamowienia = await storageHandle.GetZamowienia()
-    const raport = zamowienia.filter(element => element.stolik == stolik)
-    res.status(200).send(raport)
-})
-app.get('raport/zamowienia/stolik/suma/:nazwa', async function (req: Request, res: Response) {
-    const stolik = await storageHandle.GetStolik(req.params.nazwa)
-    if (!stolik)
-        return res.status(404).send("Nie odnaleziono")
-    const zamowienia = await storageHandle.GetZamowienia()
-    const raport = zamowienia.filter(element => element.stolik == stolik)
+    const raport = zamowienia.filter(element => element.stolik.nazwa == stolik.nazwa)
     res.status(200).send(raport.length)
 })
-app.get('raport/zamowienia/czas', async function (req: Request, res: Response) {
+app.post('/raport/zamowienia/czas', async function (req: Request, res: Response) {
     if (!req.body.od == undefined || !req.body.do == undefined)
         return res.status(400).send("Podaj od i do")
     const zamowienia = await storageHandle.GetZamowienia()
-    const raport = zamowienia.filter(element => element.DataZamowineia > req.body.od && element.DataZamowineia < req.body.do && element.status == S.zrealizowane)
+    //console.log(zamowienia)
+    const raport = zamowienia.filter(element => element.DataZamowienia >= new Date(req.body.od) && element.DataZamowienia <= new Date(req.body.do))
     res.status(200).send(raport)
 })
-app.get('raport/zamowienia/czas/przychod', async function (req: Request, res: Response) {
+app.post('/raport/zamowienia/czas/przychod', async function (req: Request, res: Response) {
     if (!req.body.od == undefined || !req.body.do == undefined)
         return res.status(400).send("Podaj od i do")
     const zamowienia = await storageHandle.GetZamowienia()
-    const raport = zamowienia.filter(element => element.DataZamowineia > req.body.od && element.DataZamowineia < req.body.do && element.status == S.zrealizowane)
+    const raport = zamowienia.filter(element => element.DataZamowienia > new Date(req.body.od) && element.DataZamowienia < new Date(req.body.do))
     let przychod = 0
-    raport.forEach(element => przychod += element.kwota)
-    res.status(200).send(przychod)
+    await raport.forEach(element => przychod += element.kwota)
+    res.status(200).send(przychod.toString())
 })
 
 
