@@ -158,20 +158,52 @@ app.delete('/danie/:id', async function (req: Request, res: Response) {
     res.status(200).send("Usunięto")
 })
 app.get('/magazyn', (async function (req: Request, res: Response) {
-    res.status(200).send(await (await storageHandle.GetProdukty()).slice(0, 10))
+    const produkty = await storageHandle.GetProdukty()
+    let sorted: Produkt[] = []
+    if (req.body.orderBy) {
+        if (req.body.orderBy == "asc") {
+            sorted = produkty.sort((a, b) => a.nazwa.localeCompare(b.nazwa))
+        }
+        else if (req.body.orderBy == "desc") {
+            sorted = produkty.sort((a, b) => b.nazwa.localeCompare(a.nazwa))
+        }
+        else {
+            return res.status(400).send("Niepoprawne sortowanie")
+        }
+        res.status(200).send(sorted.slice(0, 10))
+    }
+    else {
+        res.status(200).send(produkty.slice(0, 10))
+    }
 }))
 app.get('/magazyn/strona/:numer', (async function (req: Request, res: Response) {
-    res.status(200).send(await (await storageHandle.GetProdukty()).slice(10 * (+req.params.numer), 10 * (+req.params.numer) + 10))
+    const produkty = await storageHandle.GetProdukty()
+    let sorted: Produkt[] = []
+    if (req.body.orderBy) {
+        if (req.body.orderBy == "asc") {
+            sorted = produkty.sort((a, b) => a.nazwa.localeCompare(b.nazwa))
+        }
+        else if (req.body.orderBy == "desc") {
+            sorted = produkty.sort((a, b) => b.nazwa.localeCompare(a.nazwa))
+        }
+        else {
+            return res.status(400).send("Niepoprawne sortowanie")
+        }
+        res.status(200).send(sorted.slice(10 * (+req.params.numer), 10 * (+req.params.numer) + 10))
+    }
+    else {
+        res.status(200).send(produkty.slice(10 * (+req.params.numer), 10 * (+req.params.numer) + 10))
+    }
 }))
 app.get('/magazyn/:nazwa', (async function (req: Request, res: Response) {
     res.status(200).send(await storageHandle.GetProdukt(req.params.nazwa))
 }))
-app.get('/magazyn/sortowanie/:nazwa', (async function (req: Request, res: Response) {
+// app.get('/magazyn/sortowanie/:nazwa', (async function (req: Request, res: Response) {
 
-    const magazyn = await storageHandle.GetProdukty()
-    const wynik = magazyn.filter(element => element.nazwa == req.params.nazwa)
-    res.status(200).send(wynik)
-}))
+//     const magazyn = await storageHandle.GetProdukty()
+//     const wynik = magazyn.filter(element => element.nazwa == req.params.nazwa)
+//     res.status(200).send(wynik)
+// }))
 app.post('/magazyn', (async function (req: Request, res: Response) {
     if (!req.body.nazwa || !req.body.cena || !req.body.ilosc || !req.body.jednostkaMiary)
         return res.status(400).send("Podaj prawidłowe dane")
@@ -230,10 +262,42 @@ app.delete('/magazyn/:nazwa', (async function (req: Request, res: Response) {
     res.status(200).send("Usunięto")
 }))
 app.get('/zapotrzebowanie', (async function (req: Request, res: Response) {
-    res.status(200).send(await (await storageHandle.GetProduktyZapotrzebowanie()).slice(0, 10))
+    const produkty = await storageHandle.GetProduktyZapotrzebowanie()
+    let sorted: Produkt[] = []
+    if (req.body.orderBy) {
+        if (req.body.orderBy == "asc") {
+            sorted = produkty.sort((a, b) => a.nazwa.localeCompare(b.nazwa))
+        }
+        else if (req.body.orderBy == "desc") {
+            sorted = produkty.sort((a, b) => b.nazwa.localeCompare(a.nazwa))
+        }
+        else {
+            return res.status(400).send("Niepoprawne sortowanie")
+        }
+        res.status(200).send(sorted.slice(10 * (+req.params.numer), 10 * (+req.params.numer) + 10))
+    }
+    else {
+        res.status(200).send(produkty.slice(10 * (+req.params.numer), 10 * (+req.params.numer) + 10))
+    }
 }))
 app.get('/zapotrzebowanie/strona/:numer', (async function (req: Request, res: Response) {
-    res.status(200).send(await (await storageHandle.GetProduktyZapotrzebowanie()).slice(10 * (+req.params.numer), 10 * (+req.params.numer) + 10))
+    const produkty = await storageHandle.GetProduktyZapotrzebowanie()
+    let sorted: Produkt[] = []
+    if (req.body.orderBy) {
+        if (req.body.orderBy == "asc") {
+            sorted = produkty.sort((a, b) => a.nazwa.localeCompare(b.nazwa))
+        }
+        else if (req.body.orderBy == "desc") {
+            sorted = produkty.sort((a, b) => b.nazwa.localeCompare(a.nazwa))
+        }
+        else {
+            return res.status(400).send("Niepoprawne sortowanie")
+        }
+        res.status(200).send(sorted.slice(10 * (+req.params.numer), 10 * (+req.params.numer) + 10))
+    }
+    else {
+        res.status(200).send(produkty.slice(10 * (+req.params.numer), 10 * (+req.params.numer) + 10))
+    }
 }))
 app.get('/zapotrzebowanie/:nazwa', (async function (req: Request, res: Response) {
     res.status(200).send(await storageHandle.GetProduktZapotrzebowanie(req.params.nazwa))
@@ -343,7 +407,9 @@ app.put('/zamowienie/dodaj/danie/:id', async function (req: Request, res: Respon
     const danie = await storageHandle.GetDanie(req.body.danie)
     if (!danie)
         return res.status(404).send("Nie odnaleziono danie")
-    zamowienie.DodajDanie(danie)
+    const check = zamowienie.DodajDanie(danie)
+    if (!check)
+        return res.status(400).send("Nie można dodać danie")
     await storageHandle.UpdateZamowienie(zamowienie._id, zamowienie)
     res.status(200).send(zamowienie)
 })
@@ -356,7 +422,9 @@ app.put('/zamowienie/usun/danie/:id', async function (req: Request, res: Respons
     const danie = await storageHandle.GetDanie(req.body.danie)
     if (!danie)
         return res.status(404).send("Nie odnaleziono danie")
-    zamowienie.UsunDanie(danie)
+    const check = zamowienie.UsunDanie(danie)
+    if (!check)
+        return res.status(400).send("Nie można dodać danie")
     await storageHandle.UpdateZamowienie(zamowienie._id, zamowienie)
     res.status(200).send(zamowienie)
 })
@@ -364,7 +432,8 @@ app.put('zamowienie/nastepy/status', async function (req: Request, res: Response
     const zamowienie: any = await storageHandle.GetZamowienie(req.params.id)
     if (!zamowienie)
         return res.status(404).send("Nie odnaleziono")
-    zamowienie.NastepyStatus()
+    try { zamowienie.NastepyStatus() }
+    catch (e) { return res.status(400).send(e) }
     await storageHandle.UpdateZamowienie(zamowienie._id, zamowienie)
     res.status(200).send(zamowienie)
 })
@@ -372,188 +441,237 @@ app.delete('/zamowienie/:id', async function (req: Request, res: Response) {
     await storageHandle.DeleteZamowienie(req.params.id)
     res.status(200).send("Usunięto")
 })
+app.get('raport/zamowienia/kelner/:id', async function (req: Request, res: Response) {
+    const pracownik = await storageHandle.GetPracownik(req.params.id)
+    if (!pracownik)
+        return res.status(404).send("Nie odnaleziono")
+    const zamowienia = await storageHandle.GetZamowienia()
+    const raport = zamowienia.filter(element => element.pracownik == pracownik)
+    res.status(200).send(raport)
+})
+app.get('raport/zamowienia/kelner/suma/:id', async function (req: Request, res: Response) {
+    const pracownik = await storageHandle.GetPracownik(req.params.id)
+    if (!pracownik)
+        return res.status(404).send("Nie odnaleziono")
+    const zamowienia = await storageHandle.GetZamowienia()
+    const raport = zamowienia.filter(element => element.pracownik == pracownik)
+    res.status(200).send(raport.length)
+})
+app.get('raport/zamowienia/stolik/:nazwa', async function (req: Request, res: Response) {
+    const stolik = await storageHandle.GetStolik(req.params.nazwa)
+    if (!stolik)
+        return res.status(404).send("Nie odnaleziono")
+    const zamowienia = await storageHandle.GetZamowienia()
+    const raport = zamowienia.filter(element => element.stolik == stolik)
+    res.status(200).send(raport)
+})
+app.get('raport/zamowienia/stolik/suma/:nazwa', async function (req: Request, res: Response) {
+    const stolik = await storageHandle.GetStolik(req.params.nazwa)
+    if (!stolik)
+        return res.status(404).send("Nie odnaleziono")
+    const zamowienia = await storageHandle.GetZamowienia()
+    const raport = zamowienia.filter(element => element.stolik == stolik)
+    res.status(200).send(raport.length)
+})
+app.get('raport/zamowienia/czas', async function (req: Request, res: Response) {
+    if (!req.body.od == undefined || !req.body.do == undefined)
+        return res.status(400).send("Podaj od i do")
+    const zamowienia = await storageHandle.GetZamowienia()
+    const raport = zamowienia.filter(element => element.DataZamowineia > req.body.od && element.DataZamowineia < req.body.do && element.status == S.zrealizowane)
+    res.status(200).send(raport)
+})
+app.get('raport/zamowienia/czas/przychod', async function (req: Request, res: Response) {
+    if (!req.body.od == undefined || !req.body.do == undefined)
+        return res.status(400).send("Podaj od i do")
+    const zamowienia = await storageHandle.GetZamowienia()
+    const raport = zamowienia.filter(element => element.DataZamowineia > req.body.od && element.DataZamowineia < req.body.do && element.status == S.zrealizowane)
+    let przychod = 0
+    raport.forEach(element => przychod += element.kwota)
+    res.status(200).send(przychod)
+})
 
 
-    // app.get('/pracownik/:id', (async function (req: Request, res: Response){
-    //     const pracownikCheck = storageHandle.GetPracownik({})
-    //     // to do: poprawa get pracownik, mogą być o tych samych danych
-    //     //const token = jwt.sign(payload, secret)
-    // }))
 
-    //to do: tokeny dla każdego pracownika, dzięki którym przypisują się do zamówienia
-    //to do: sortowanie po nazwie: rosnąco i malejąco
+// app.get('/pracownik/:id', (async function (req: Request, res: Response){
+//     const pracownikCheck = storageHandle.GetPracownik({})
+//     // to do: poprawa get pracownik, mogą być o tych samych danych
+//     //const token = jwt.sign(payload, secret)
+// }))
 
-    // DodajRezerwacje(start: Date, end: Date, iloscOsob: number) {
-    //     let inneRezerwacje = this._rezerwacje.filter(rezerwacja => (start <= rezerwacja.Start && rezerwacja.Start<end) || (end >= rezerwacja.Koniec && rezerwacja.Koniec>start)) //inne rezerwacje w tym terminie
-    //     let wolneStoliki = this._stoliki.filter(element => !inneRezerwacje.some(rezerwacja => rezerwacja.Stolik == element )) //wybieranie nie zajętego stolika w tym okresie czasu
-    //     const stolik = wolneStoliki.find(stolik => stolik.IloscOsob >= iloscOsob)
-    //     if (stolik) { 
-    //         this._rezerwacje.push(new Rezerwacja(start, end, stolik)) 
-    //     }
-    //     console.log(wolneStoliki)
-    //     //console.log(inneRezerwacje)
-    // }
-    // app.get('/stoliki', (function (req: Request, res: Response) {
-    //     const now = new Date(Date.now())
-    //     let inneRezerwacje = storageHandle.rezerwacje.filter(rezerwacja => rezerwacja.Start < now && rezerwacja.Koniec > now)
-    //     let zajeteStoliki = storageHandle.stoliki.filter(element => inneRezerwacje.some(rezerwacja => rezerwacja.Stolik == element)) //wybieranie nie zajętego stolika w tym okresie czasu
-    //     let tmpStoliki = storageHandle.stoliki
-    //     tmpStoliki.forEach(element => {
-    //         if (zajeteStoliki.includes(element))
-    //             element.Status = Status.zajety
-    //     })
-    //     res.status(200).send(tmpStoliki)
-    // }))
+//to do: tokeny dla każdego pracownika, dzięki którym przypisują się do zamówienia
+//to do: sortowanie po nazwie: rosnąco i malejąco
 
-    // app.get('/stolik/:name', (function (req: Request, res: Response) {
-    //     const stolik = storageHandle.stoliki.find(stolik => stolik.Nazwa = req.params.name)
-    //     if (stolik)
-    //         res.status(200).send(stolik)
-    //     else
-    //         res.status(404).send("Nie odnalezniono stolika")
-    // }))
-    // app.post('/stolik', (function (req: Request, res: Response) {
-    //     if (!req.body.name)
-    //         return res.status(400).send("Podaj nazwę stolika")
-    //     const stolik = storageHandle.stoliki.find(stolik => stolik.Nazwa == req.body.name)
-    //     if (stolik)
-    //         return res.status(400).send("Stolik już istnieje")
-    //     else if (req.body.iloscOsob) {
-    //         const utworzonyStolik = new Stolik(req.body.name, +req.body.iloscOsob, req.body.status ?? "")
-    //         storageHandle.stoliki.push(utworzonyStolik)
-    //         storageHandle.UpdateStorage()
-    //         return res.status(200).send(utworzonyStolik)
-    //     }
-    // }))
-    // app.put('/stolik/:name', (function (req: Request, res: Response) {
-    //     const stolik = storageHandle.stoliki.find(stolik => stolik.Nazwa === req.params.name)
-    //     const stolikIndex = storageHandle.stoliki.findIndex(stolik => stolik.Nazwa === req.params.name)
-    //     if (stolik) {
-    //         let toEditStolik = storageHandle.stoliki[stolikIndex]
-    //         if (req.body.name) {
-    //             if (storageHandle.stoliki.find(stolik => stolik.Nazwa == req.body.name))
-    //                 return res.status(400).send("Stolik z taką nazwą już istnieje")
-    //             toEditStolik.Nazwa = req.body.name
-    //         }
-    //         if (req.body.iloscOsob)
-    //             toEditStolik.IloscOsob = req.body.iloscOsob
-    //         if (req.body.status)
-    //             toEditStolik.Status = Status[req.body.status as keyof typeof Status]
-    //         storageHandle.stoliki.splice(stolikIndex, 1, toEditStolik)
-    //         storageHandle.UpdateStorage()
-    //         return res.status(200).send(toEditStolik)
-    //     }
-    //     else
-    //         res.status(404).send("Nie odnalezniono stolika")
-    // }))
-    // app.delete('/stolik/:name', (function (req: Request, res: Response) {
-    //     const stolik = storageHandle.stoliki.find(stolik => stolik.Nazwa = req.params.name)
-    //     if (stolik) {
-    //         storageHandle.stoliki.slice(storageHandle.stoliki.findIndex(stolik => stolik.Nazwa = req.params.name), 1)
-    //         res.status(200).send(stolik)
-    //     }
-    //     else
-    //         res.status(404).send("Nie odnalezniono stolika")
-    // }))
-    // app.get('/menu', (function (req: Request, res: Response) {
-    //     res.status(200).send(storageHandle.menu)
-    // }))
-    // app.get('/menu/:nazwa', (function (req: Request, res: Response) {
-    //     const danie = storageHandle.menu.find(element => element.nazwa = req.params.nazwa)
-    //     if (danie)
-    //         return res.status(200).send(danie)
-    //     else
-    //         return res.status(404).send("Nie odnaleziono danie")
-    // }))
-    // app.post('/menu', function (req: Request, res: Response) {
-    //     let danie: Danie;
-    //     if (req.body.nazwa && req.body.cena && req.body.kategoria) {
-    //         if ((Object.values(Kategoria).includes(req.body.kategoria))) {
-    //             danie = new Danie(req.body.nazwa, req.body.cena, req.body.kategoria)
-    //             storageHandle.menu.push(danie)
-    //             res.status(200).send(danie)
-    //         }
-    //         else
-    //             res.status(400).send("Błędna kategoria")
-    //     }
-    //     else {
-    //         res.status(400).send("Niepoprawne dane")
-    //     }
-    // })
-    // app.put('/menu/:nazwa', function (req: Request, res: Response){
-    //     const danie = storageHandle.
-    // })
+// DodajRezerwacje(start: Date, end: Date, iloscOsob: number) {
+//     let inneRezerwacje = this._rezerwacje.filter(rezerwacja => (start <= rezerwacja.Start && rezerwacja.Start<end) || (end >= rezerwacja.Koniec && rezerwacja.Koniec>start)) //inne rezerwacje w tym terminie
+//     let wolneStoliki = this._stoliki.filter(element => !inneRezerwacje.some(rezerwacja => rezerwacja.Stolik == element )) //wybieranie nie zajętego stolika w tym okresie czasu
+//     const stolik = wolneStoliki.find(stolik => stolik.IloscOsob >= iloscOsob)
+//     if (stolik) { 
+//         this._rezerwacje.push(new Rezerwacja(start, end, stolik)) 
+//     }
+//     console.log(wolneStoliki)
+//     //console.log(inneRezerwacje)
+// }
+// app.get('/stoliki', (function (req: Request, res: Response) {
+//     const now = new Date(Date.now())
+//     let inneRezerwacje = storageHandle.rezerwacje.filter(rezerwacja => rezerwacja.Start < now && rezerwacja.Koniec > now)
+//     let zajeteStoliki = storageHandle.stoliki.filter(element => inneRezerwacje.some(rezerwacja => rezerwacja.Stolik == element)) //wybieranie nie zajętego stolika w tym okresie czasu
+//     let tmpStoliki = storageHandle.stoliki
+//     tmpStoliki.forEach(element => {
+//         if (zajeteStoliki.includes(element))
+//             element.Status = Status.zajety
+//     })
+//     res.status(200).send(tmpStoliki)
+// }))
 
-    // DodajDanie(danie: Danie): boolean {
-    //     if (this._menu.find(element => element.Nazwa == danie.Nazwa))
-    //         return false
-    //     else {
-    //         this._menu.push(danie)
-    //         return true
-    //     }
-    // }
+// app.get('/stolik/:name', (function (req: Request, res: Response) {
+//     const stolik = storageHandle.stoliki.find(stolik => stolik.Nazwa = req.params.name)
+//     if (stolik)
+//         res.status(200).send(stolik)
+//     else
+//         res.status(404).send("Nie odnalezniono stolika")
+// }))
+// app.post('/stolik', (function (req: Request, res: Response) {
+//     if (!req.body.name)
+//         return res.status(400).send("Podaj nazwę stolika")
+//     const stolik = storageHandle.stoliki.find(stolik => stolik.Nazwa == req.body.name)
+//     if (stolik)
+//         return res.status(400).send("Stolik już istnieje")
+//     else if (req.body.iloscOsob) {
+//         const utworzonyStolik = new Stolik(req.body.name, +req.body.iloscOsob, req.body.status ?? "")
+//         storageHandle.stoliki.push(utworzonyStolik)
+//         storageHandle.UpdateStorage()
+//         return res.status(200).send(utworzonyStolik)
+//     }
+// }))
+// app.put('/stolik/:name', (function (req: Request, res: Response) {
+//     const stolik = storageHandle.stoliki.find(stolik => stolik.Nazwa === req.params.name)
+//     const stolikIndex = storageHandle.stoliki.findIndex(stolik => stolik.Nazwa === req.params.name)
+//     if (stolik) {
+//         let toEditStolik = storageHandle.stoliki[stolikIndex]
+//         if (req.body.name) {
+//             if (storageHandle.stoliki.find(stolik => stolik.Nazwa == req.body.name))
+//                 return res.status(400).send("Stolik z taką nazwą już istnieje")
+//             toEditStolik.Nazwa = req.body.name
+//         }
+//         if (req.body.iloscOsob)
+//             toEditStolik.IloscOsob = req.body.iloscOsob
+//         if (req.body.status)
+//             toEditStolik.Status = Status[req.body.status as keyof typeof Status]
+//         storageHandle.stoliki.splice(stolikIndex, 1, toEditStolik)
+//         storageHandle.UpdateStorage()
+//         return res.status(200).send(toEditStolik)
+//     }
+//     else
+//         res.status(404).send("Nie odnalezniono stolika")
+// }))
+// app.delete('/stolik/:name', (function (req: Request, res: Response) {
+//     const stolik = storageHandle.stoliki.find(stolik => stolik.Nazwa = req.params.name)
+//     if (stolik) {
+//         storageHandle.stoliki.slice(storageHandle.stoliki.findIndex(stolik => stolik.Nazwa = req.params.name), 1)
+//         res.status(200).send(stolik)
+//     }
+//     else
+//         res.status(404).send("Nie odnalezniono stolika")
+// }))
+// app.get('/menu', (function (req: Request, res: Response) {
+//     res.status(200).send(storageHandle.menu)
+// }))
+// app.get('/menu/:nazwa', (function (req: Request, res: Response) {
+//     const danie = storageHandle.menu.find(element => element.nazwa = req.params.nazwa)
+//     if (danie)
+//         return res.status(200).send(danie)
+//     else
+//         return res.status(404).send("Nie odnaleziono danie")
+// }))
+// app.post('/menu', function (req: Request, res: Response) {
+//     let danie: Danie;
+//     if (req.body.nazwa && req.body.cena && req.body.kategoria) {
+//         if ((Object.values(Kategoria).includes(req.body.kategoria))) {
+//             danie = new Danie(req.body.nazwa, req.body.cena, req.body.kategoria)
+//             storageHandle.menu.push(danie)
+//             res.status(200).send(danie)
+//         }
+//         else
+//             res.status(400).send("Błędna kategoria")
+//     }
+//     else {
+//         res.status(400).send("Niepoprawne dane")
+//     }
+// })
+// app.put('/menu/:nazwa', function (req: Request, res: Response){
+//     const danie = storageHandle.
+// })
 
-    // UsunDanie(danie: Danie): boolean {
-    //     if (this._menu.find(element => element.Nazwa == danie.Nazwa)) {
-    //         this._menu = this._menu.splice(this._menu.findIndex(element => element.Nazwa == danie.Nazwa, 1))
-    //         return true
-    //     }
-    //     else {
-    //         return false
-    //     }
-    // }
+// DodajDanie(danie: Danie): boolean {
+//     if (this._menu.find(element => element.Nazwa == danie.Nazwa))
+//         return false
+//     else {
+//         this._menu.push(danie)
+//         return true
+//     }
+// }
 
-    // Zatrudnij(pracownik: Pracownik): boolean {
-    //     if (this._zatrudnieni.includes(pracownik))
-    //         return false
-    //     else {
-    //         this._zatrudnieni.push(pracownik)
-    //         return true
-    //     }
-    // }
+// UsunDanie(danie: Danie): boolean {
+//     if (this._menu.find(element => element.Nazwa == danie.Nazwa)) {
+//         this._menu = this._menu.splice(this._menu.findIndex(element => element.Nazwa == danie.Nazwa, 1))
+//         return true
+//     }
+//     else {
+//         return false
+//     }
+// }
 
-    // Zwolnij(pracownik: Pracownik): boolean {
-    //     let tmp = this._zatrudnieni.find(element => element.Imie == pracownik.Imie && element.Nazwisko == pracownik.Nazwisko && element.Pozycja == pracownik.Pozycja)
-    //     if (tmp) {
-    //         tmp.Pozycja = Pozycja.zwolniony
-    //         this._zatrudnieni = this._zatrudnieni.splice(this._zatrudnieni.findIndex(element => element.Imie == pracownik.Imie && element.Nazwisko == pracownik.Nazwisko && element.Pozycja == pracownik.Pozycja, tmp))
-    //         return true
-    //     }
-    //     else {
-    //         return false
-    //     }
-    // }
+// Zatrudnij(pracownik: Pracownik): boolean {
+//     if (this._zatrudnieni.includes(pracownik))
+//         return false
+//     else {
+//         this._zatrudnieni.push(pracownik)
+//         return true
+//     }
+// }
 
-    // DodajStolik(stolik: Stolik): boolean {
-    //     if (this._stoliki.find(element => element.Nazwa == stolik.Nazwa))
-    //         return false
-    //     else {
-    //         this._stoliki.push(stolik)
-    //         return true
-    //     }
-    // }
+// Zwolnij(pracownik: Pracownik): boolean {
+//     let tmp = this._zatrudnieni.find(element => element.Imie == pracownik.Imie && element.Nazwisko == pracownik.Nazwisko && element.Pozycja == pracownik.Pozycja)
+//     if (tmp) {
+//         tmp.Pozycja = Pozycja.zwolniony
+//         this._zatrudnieni = this._zatrudnieni.splice(this._zatrudnieni.findIndex(element => element.Imie == pracownik.Imie && element.Nazwisko == pracownik.Nazwisko && element.Pozycja == pracownik.Pozycja, tmp))
+//         return true
+//     }
+//     else {
+//         return false
+//     }
+// }
 
-    // ZmienStatusStolika(stolik: Stolik, status: StolikStatus): boolean {
-    //     let tmp = this._stoliki.find(element => element.Nazwa == stolik.Nazwa)
-    //     if (tmp && tmp.Status != status) {
-    //         tmp.Status = status
-    //         this._stoliki = this._stoliki.splice(this._stoliki.findIndex(element => element.Nazwa == stolik.Nazwa, status))
-    //         return true
-    //     }
-    //     else {
-    //         return false
-    //     }
-    // }
+// DodajStolik(stolik: Stolik): boolean {
+//     if (this._stoliki.find(element => element.Nazwa == stolik.Nazwa))
+//         return false
+//     else {
+//         this._stoliki.push(stolik)
+//         return true
+//     }
+// }
 
-    // UsunStolik(stolik: Stolik): boolean {
-    //     if (this._stoliki.find(element => element.Nazwa == stolik.Nazwa)) {
-    //         this._stoliki = this._stoliki.splice(this._stoliki.findIndex(element => element.Nazwa == stolik.Nazwa, 1))
-    //         return true
-    //     }
-    //     else {
-    //         return false
-    //     }
-    // }
+// ZmienStatusStolika(stolik: Stolik, status: StolikStatus): boolean {
+//     let tmp = this._stoliki.find(element => element.Nazwa == stolik.Nazwa)
+//     if (tmp && tmp.Status != status) {
+//         tmp.Status = status
+//         this._stoliki = this._stoliki.splice(this._stoliki.findIndex(element => element.Nazwa == stolik.Nazwa, status))
+//         return true
+//     }
+//     else {
+//         return false
+//     }
+// }
+
+// UsunStolik(stolik: Stolik): boolean {
+//     if (this._stoliki.find(element => element.Nazwa == stolik.Nazwa)) {
+//         this._stoliki = this._stoliki.splice(this._stoliki.findIndex(element => element.Nazwa == stolik.Nazwa, 1))
+//         return true
+//     }
+//     else {
+//         return false
+//     }
+// }
 
 
-    app.listen(3000)
+app.listen(3000)
