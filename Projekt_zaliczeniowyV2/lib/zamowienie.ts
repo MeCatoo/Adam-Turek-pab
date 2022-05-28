@@ -1,6 +1,6 @@
 import { Pracownik } from "./pracownik";
 import { Danie } from "./danie";
-import { Stolik } from "./Stolik";
+import { Stolik } from "./stolik";
 
 export class Zamowienie {
     pracownik: Pracownik
@@ -10,11 +10,11 @@ export class Zamowienie {
     kwota: number
     readonly DataZamowineia: Date
 
-    constructor(dania: Danie[], stolik: Stolik, pracownik?: Pracownik) {
+    constructor(dania: Danie[], stolik: Stolik, pracownik?: Pracownik, kwota?: number) {
         let finalKwota = 0
         dania.forEach(element => finalKwota += element.cena)
         this.pozycje = dania
-        this.kwota = finalKwota
+        this.kwota = kwota??finalKwota
         this.stolik = stolik
         this.pracownik = <Pracownik>pracownik
         this.DataZamowineia = new Date(Date.now())

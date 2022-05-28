@@ -106,7 +106,7 @@ const pracownikScema = new mongoose.Schema({
         required: true
     },
     nazwisko: {
-        type: Number,
+        type: String,
         required: true
     },
     pozycja: {

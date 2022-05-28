@@ -7,6 +7,7 @@ import { Produkt } from "./produkt"
 import { Zamowienie } from "./zamowienie"
 import { stolikModel, restauracjaModel, rezerwacjaModel, danieModel, pracownikModel, zamoweienieModel, produktModel, produktZapotrzebowanieModel } from "../configDB"
 import { Mode } from "fs"
+import { tmpdir } from "os"
 
 export class StorageHandle {
     restauracja?: Restauracja
@@ -113,24 +114,27 @@ export class StorageHandle {
         const newDanie = await new danieModel(danie)
         newDanie.save()
     }
+    async UpdateDanie(nazwa: string, edited: Danie) {
+        await danieModel.findOneAndUpdate({ nazwa: nazwa }, edited)
+    }
     async DeleteDanie(nazwa: string) {
         await danieModel.deleteOne({ nazwa: nazwa }).exec()
     }
     async GetPracownicy(): Promise<Pracownik[]> {
         return await pracownikModel.find().exec()
     }
-    async GetPracownik(imie: string, nazwisko: string): Promise<Pracownik> {
-        return await pracownikModel.findOne({ imie: imie, nazwisko: nazwisko }).exec()
+    async GetPracownik(id: string): Promise<Pracownik> {
+        return await pracownikModel.findOne({ _id:id }).exec()
     }
     async PostPracownik(pracownik: Pracownik) {
         const newPracownik = pracownikModel(pracownik)
         await newPracownik.save()
     }
-    async UpdatePracownik(imie: string, nazwisko: string, pracownik: Pracownik) {
-        await pracownikModel.findOneAndUpdate({ imie: imie, nazwisko: nazwisko }, pracownik)
+    async UpdatePracownik(id: string, pracownik: Pracownik) {
+        await pracownikModel.findOneAndUpdate({  _id:id  }, pracownik)
     }
-    async DeletePracownik(imie: string, nazwisko: string) {
-        await pracownikModel.deleteOne({ imie: imie, nazwisko: nazwisko })
+    async DeletePracownik(id: string) {
+        await pracownikModel.deleteOne({  _id:id  })
     }
     async GetZamowienia(): Promise<Zamowienie[]> {
         return await zamoweienieModel.find().exec()
