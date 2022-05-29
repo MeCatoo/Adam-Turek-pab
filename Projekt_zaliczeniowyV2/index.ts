@@ -112,13 +112,35 @@ app.get('/rezerwacje', (async function (req: Request, res: Response) {
 app.get('/rezerwacja/:id', (async function (req: Request, res: Response) {
     res.status(200).send(await storageHandle.GetRezerwacja(req.params.id))
 }))
+// app.post('/rezerwacja', (async function (req: Request, res: Response) {
+//     if (!req.body.start || !req.body.end || !req.body.iloscOsob || !req.body.imie || !req.body.nazwisko)
+//         return res.status(400).send("Podaj daty i ilosc osob")
+//     const _rezerwacje = await storageHandle.GetRezerwacje()
+//     const _stoliki = await storageHandle.GetStoliki()
+//     let inneRezerwacje = _rezerwacje.filter(rezerwacja => (req.body.start <= rezerwacja.start && rezerwacja.start < req.body.end) || (req.body.end >= rezerwacja.koniec && rezerwacja.koniec > req.body.start)) //inne rezerwacje w tym terminie
+//     console.log(inneRezerwacje)
+//     let wolneStoliki = _stoliki.filter(element => !inneRezerwacje.some(rezerwacja => rezerwacja.stolik.nazwa == element.nazwa)) //wybieranie nie zajętego stolika w tym okresie czasu
+//     console.log(wolneStoliki)
+//     const stolik = wolneStoliki.find(stolik => stolik.iloscOsob >= req.body.iloscOsob && stolik.status != Status.niedostepny)
+//     if (stolik) {
+//         const tmp = new Rezerwacja({ start: req.body.start, koniec: req.body.end, stolik: stolik, imie: req.body.imie, nazwisko: req.body.nazwisko })
+//         await storageHandle.PostRezerwacja(tmp)
+//         return res.status(200).send(stolik)
+//     }
+//     else {
+//         return res.status(404).send("Brak wolnych stolików")
+//     }
+
+// }))
 app.post('/rezerwacja', (async function (req: Request, res: Response) {
     if (!req.body.start || !req.body.end || !req.body.iloscOsob || !req.body.imie || !req.body.nazwisko)
         return res.status(400).send("Podaj daty i ilosc osob")
     const _rezerwacje = await storageHandle.GetRezerwacje()
     const _stoliki = await storageHandle.GetStoliki()
     let inneRezerwacje = _rezerwacje.filter(rezerwacja => (req.body.start <= rezerwacja.start && rezerwacja.start < req.body.end) || (req.body.end >= rezerwacja.koniec && rezerwacja.koniec > req.body.start)) //inne rezerwacje w tym terminie
-    let wolneStoliki = _stoliki.filter(element => !inneRezerwacje.some(rezerwacja => rezerwacja.stolik == element)) //wybieranie nie zajętego stolika w tym okresie czasu
+    //console.log(inneRezerwacje)
+    let wolneStoliki = _stoliki.filter(element => !inneRezerwacje.some(rezerwacja => rezerwacja.stolik.nazwa == element.nazwa)) //wybieranie nie zajętego stolika w tym okresie czasu
+    console.log(wolneStoliki)
     const stolik = wolneStoliki.find(stolik => stolik.iloscOsob >= req.body.iloscOsob && stolik.status != Status.niedostepny)
     if (stolik) {
         const tmp = new Rezerwacja({ start: req.body.start, koniec: req.body.end, stolik: stolik, imie: req.body.imie, nazwisko: req.body.nazwisko })

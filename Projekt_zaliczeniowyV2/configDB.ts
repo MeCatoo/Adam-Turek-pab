@@ -61,7 +61,7 @@ const rezerwacjaSchema = new mongoose.Schema({
     // },
     stolik: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'stolikSchema',
+        ref: 'stolik',
         required: true
     },
     start: {

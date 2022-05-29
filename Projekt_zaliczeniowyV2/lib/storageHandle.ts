@@ -77,19 +77,12 @@ export class StorageHandle {
         await stolikModel.findOneAndUpdate({ nazwa: nazwa }, edited)
     }
     async GetRezerwacja(id: string): Promise<Rezerwacja> {
-        const data = await rezerwacjaModel.findOne({ _id: id }).exec()
+        const data = await rezerwacjaModel.findOne({ _id: id }).populate('stolik').exec()
         return new Rezerwacja(data)
     }
     async GetRezerwacje(): Promise<Rezerwacja[]> {
-        let tmp: Rezerwacja[] = []
-        const save = await rezerwacjaModel.find({}).exec()
-        await save.forEach((element: Rezerwacja) => {
-            // element.stolik = new Stolik(stolikModel.findOne({_id: element.stolik._id }).exec())
-            // console.log(element.stolik._id)
-            tmp.push(new Rezerwacja(element))
-        });
-        //await tmp.forEach(element => element.stolik = new Stolik( stolikModel.findOne({_id:element.stolik._id})))
-        return tmp
+        const save = await rezerwacjaModel.find({}).populate('stolik').exec()
+        return save
     }
     async PostRezerwacja(rezerwacja: Rezerwacja) {
         //const newRezerwacja = new rezerwacjaModel({stolik: rezerwacja.stolik._id, start: rezerwacja.start, koniec: rezerwacja.koniec, imie: rezerwacja.imie, nazwisko: rezerwacja.nazwisko})
