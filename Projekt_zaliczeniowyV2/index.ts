@@ -50,7 +50,7 @@ app.get('/stoliki/wolne', (async function (req: Request, res: Response) {
     })
     res.status(200).send(wolneStoliki);
 }))
-app.get('/stoliki/wolny', (async function (req: Request, res: Response) {
+app.post('/stoliki/wolny', (async function (req: Request, res: Response) {
     if (!req.body.iloscOsob || !req.body.date)
         return res.status(400).send("Bad request")
     const now = new Date(req.body.date)
@@ -63,7 +63,10 @@ app.get('/stoliki/wolny', (async function (req: Request, res: Response) {
             wolneStoliki.push(element)
     })
     const wybranyStolik = wolneStoliki.find(element => element.iloscOsob >= req.body.iloscOsob)
-    res.status(200).send(wybranyStolik);
+   if(wybranyStolik)
+    return res.status(200).send(wybranyStolik);
+    else
+    return res.status(404).send("brak wolnych stolików")
 }))
 app.get('/stoliki', (async function (req: Request, res: Response) {
     const now = new Date(Date.now())
