@@ -63,10 +63,10 @@ app.post('/stoliki/wolny', (async function (req: Request, res: Response) {
             wolneStoliki.push(element)
     })
     const wybranyStolik = wolneStoliki.find(element => element.iloscOsob >= req.body.iloscOsob)
-   if(wybranyStolik)
-    return res.status(200).send(wybranyStolik);
+    if (wybranyStolik)
+        return res.status(200).send(wybranyStolik);
     else
-    return res.status(404).send("brak wolnych stolików")
+        return res.status(404).send("brak wolnych stolików")
 }))
 app.get('/stoliki', (async function (req: Request, res: Response) {
     const now = new Date(Date.now())
@@ -231,6 +231,7 @@ app.get('/magazyn/:nazwa', (async function (req: Request, res: Response) {
 //     res.status(200).send(wynik)
 // }))
 app.post('/magazyn', (async function (req: Request, res: Response) {
+    try{
     if (!req.body.nazwa || !req.body.cena || !req.body.ilosc || !req.body.jednostkaMiary)
         return res.status(400).send("Podaj prawidłowe dane")
     const zapotrzebowanieLista = await storageHandle.GetProduktyZapotrzebowanie()
@@ -252,6 +253,8 @@ app.post('/magazyn', (async function (req: Request, res: Response) {
     }
     await storageHandle.PostProdukt(produkt)
     res.status(200).send(produkt)
+}
+catch {}
 }))
 app.put('/magazyn/:nazwa', (async function (req: Request, res: Response) {
     if (!req.body.ilosc)
@@ -289,22 +292,9 @@ app.delete('/magazyn/:nazwa', (async function (req: Request, res: Response) {
 }))
 app.get('/zapotrzebowanie', (async function (req: Request, res: Response) {
     const produkty = await storageHandle.GetProduktyZapotrzebowanie()
-    let sorted: Produkt[] = []
-    if (req.body.orderBy) {
-        if (req.body.orderBy == "asc") {
-            sorted = produkty.sort((a, b) => a.nazwa.localeCompare(b.nazwa))
-        }
-        else if (req.body.orderBy == "desc") {
-            sorted = produkty.sort((a, b) => b.nazwa.localeCompare(a.nazwa))
-        }
-        else {
-            return res.status(400).send("Niepoprawne sortowanie")
-        }
-        res.status(200).send(sorted.slice(10 * (+req.params.numer), 10 * (+req.params.numer) + 10))
-    }
-    else {
-        res.status(200).send(produkty.slice(10 * (+req.params.numer), 10 * (+req.params.numer) + 10))
-    }
+
+    res.status(200).send(produkty)
+
 }))
 app.post('/zapotrzebowanie/strona/:numer', (async function (req: Request, res: Response) {
     const produkty = await storageHandle.GetProduktyZapotrzebowanie()
@@ -329,11 +319,14 @@ app.get('/zapotrzebowanie/:nazwa', (async function (req: Request, res: Response)
     res.status(200).send(await storageHandle.GetProduktZapotrzebowanie(req.params.nazwa))
 }))
 app.post('/zapotrzebowanie', (async function (req: Request, res: Response) {
+    try{
     if (!req.body.nazwa || !req.body.cena || !req.body.ilosc || !req.body.jednostkaMiary)
         return res.status(400).send("Podaj prawidłowe dane")
     let produkt = new Produkt({ nazwa: req.body.nazwa, cena: req.body.cena, ilosc: req.body.ilosc, jednostkaMiary: JednostkaMiary[req.body.jednostkaMiary as keyof typeof JednostkaMiary] ?? JednostkaMiary.sztuki })
     await storageHandle.PostProduktZapotrzebowanie(produkt)
     res.status(200).send(produkt)
+    }
+    catch{}
 }))
 app.put('/zapotrzebowanie/:nazwa', (async function (req: Request, res: Response) {
     if (!req.body.ilosc)
@@ -407,18 +400,16 @@ app.post('/zamowienie', async function (req: Request, res: Response) {
         return res.status(404).send("Nie odnaleziono stolika")
     let foundDania: Danie[] = []
     //console.log(await storageHandle.GetDanie("rosol"))
-   if (req.body.pozycje) {
-        for (const nazwaDania of req.body.pozycje) {
-            const tmpDanie = await storageHandle.GetDanie(nazwaDania)
-            if (tmpDanie.nazwa != undefined)
-                foundDania.push(tmpDanie)
+    if (req.body.pozycje) {
+        for (const dishTmp of req.body.pozycje) {
+            const tmp = await storageHandle.GetDanie(dishTmp)
+            if (tmp)
+                foundDania.push(tmp)
+            else
+                return res.status(404).send("Błędne dania")
         }
     }
-    console.log(foundDania)
-    if (foundDania.length != req.body.pozycje.length)
-        return res.status(400).send("Nie odnaleziono dania")
     const zamowienie = new Zamowienie(foundDania, stolik._id, pracownik, req.body.kwota)
-    //console.log(zamowienie)
     await storageHandle.PostZamowienie(zamowienie)
     res.status(200).send(zamowienie)
 })
@@ -479,7 +470,7 @@ app.get('/raport/zamowienia/kelner/:id', async function (req: Request, res: Resp
     if (!pracownik)
         return res.status(404).send("Nie odnaleziono")
     const zamowienia = await storageHandle.GetZamowienia()
-    const raport = zamowienia.filter(element => element.pracownik.imie == pracownik.imie && element.pracownik.nazwisko == pracownik.nazwisko) 
+    const raport = zamowienia.filter(element => element.pracownik.imie == pracownik.imie && element.pracownik.nazwisko == pracownik.nazwisko)
     res.status(200).send(raport)
 })
 app.get('/raport/zamowienia/kelner/suma/:id', async function (req: Request, res: Response) {
@@ -509,7 +500,7 @@ app.get('/raport/zamowienia/stolik/suma/:nazwa', async function (req: Request, r
     res.status(200).send(raport.length)
 })
 app.post('/raport/zamowienia/czas', async function (req: Request, res: Response) {
-    if (!req.body.od == undefined || !req.body.do == undefined)
+    if (!req.body.od  || !req.body.do )
         return res.status(400).send("Podaj od i do")
     const zamowienia = await storageHandle.GetZamowienia()
     //console.log(zamowienia)
@@ -517,7 +508,7 @@ app.post('/raport/zamowienia/czas', async function (req: Request, res: Response)
     res.status(200).send(raport)
 })
 app.post('/raport/zamowienia/czas/przychod', async function (req: Request, res: Response) {
-    if (!req.body.od == undefined || !req.body.do == undefined)
+    if (!req.body.od  || !req.body.do )
         return res.status(400).send("Podaj od i do")
     const zamowienia = await storageHandle.GetZamowienia()
     const raport = zamowienia.filter(element => element.DataZamowienia > new Date(req.body.od) && element.DataZamowienia < new Date(req.body.do))

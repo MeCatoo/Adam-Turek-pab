@@ -99,9 +99,9 @@ export class StorageHandle {
         newDanie.forEach((element: Danie) => tmp.push(new Danie(element)))
         return tmp
     }
-    async GetDanie(nazwa: string): Promise<Danie> {
+    async GetDanie(nazwa: string) {
         const newDanie = await danieModel.findOne({ nazwa: nazwa }).exec()
-        return new Danie(newDanie)
+        return newDanie
     }
     async PostDanie(danie: Danie) {
         const newDanie = await new danieModel(danie)
