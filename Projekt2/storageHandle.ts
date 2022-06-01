@@ -3,8 +3,9 @@ import fs from 'fs';
 import { Note } from './note'
 import { Tag } from './tag'
 import { User } from './user'
+import { IStorageHandle } from './IstorageHandle'; 
 
-export class StorageHandle {
+export class StorageHandle implements IStorageHandle{
 
     private _notes: Note[] = [];
     private _tags: Tag[] = [];
